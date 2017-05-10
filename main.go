@@ -70,30 +70,6 @@ func init() {
 	fmt.Printf("config: %v\n", config)
 }
 
-func getLunchThisWeek() []Lunch {
-	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
-
-	week, err := goweek.NewWeek(time.Now().ISOWeek())
-	if err != nil {
-		log.Fatal("could not create NewWeek")
-	}
-
-	// Loop over each weekday
-	// This should be refactored so its done only once and stored in a struct
-	var lunchesToday []Lunch
-	for _, day := range week.Days {
-
-		//Loop over each meal
-		for _, lunch := range config.Lunch {
-			if lunch.Date == day {
-				fmt.Printf("this week we eat: %v\n", lunch.Description)
-				lunchesToday = append(lunchesToday, lunch)
-			}
-		}
-	}
-	return lunchesToday
-}
-
 func main() {
 	fmt.Println("starting bot")
 
@@ -137,6 +113,31 @@ Loop:
 		}
 	}
 }
+
+func getLunchThisWeek() []Lunch {
+	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
+
+	week, err := goweek.NewWeek(time.Now().ISOWeek())
+	if err != nil {
+		log.Fatal("could not create NewWeek")
+	}
+
+	// Loop over each weekday
+	// This should be refactored so its done only once and stored in a struct
+	var lunchesToday []Lunch
+	for _, day := range week.Days {
+
+		//Loop over each meal
+		for _, lunch := range config.Lunch {
+			if lunch.Date == day {
+				fmt.Printf("this week we eat: %v\n", lunch.Description)
+				lunchesToday = append(lunchesToday, lunch)
+			}
+		}
+	}
+	return lunchesToday
+}
+
 
 func manageResponse(msg *slack.MessageEvent) {
 
