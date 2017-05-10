@@ -1,8 +1,8 @@
 package main
 
 import (
+	"./dates"
 	"fmt"
-
 	"encoding/json"
 	"github.com/grsmv/goweek"
 	"github.com/nlopes/slack"
@@ -50,7 +50,7 @@ func (u *Lunch) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	u.Date = stringToDate(aux.Date)
+	u.Date = dates.StringToDate(aux.Date)
 	return nil
 }
 
@@ -77,42 +77,9 @@ func init() {
 	fmt.Printf("config: %v\n", config)
 }
 
-func isStringToday(stringDate string) bool {
-
-	date := stringToDate(stringDate)
-	return isDateToday(date)
-}
-
-func stringToDate(stringDate string) time.Time {
-
-	date, err := time.Parse("2006-01-02", stringDate)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return date
-}
-
-func isDateToday(date time.Time) bool {
-
-	var isToday bool
-	today := time.Now().Local()
-
-	if date.Year() == today.Year() && date.Month() == today.Month() && date.Day() == today.Day() {
-		isToday = true
-	}
-
-	return isToday
-}
-
-func numberOfTheWeekInMonth(now time.Time) int {
-	beginningOfTheMonth := time.Date(now.Year(), now.Month(), 1, 1, 1, 1, 1, time.UTC)
-	_, thisWeek := now.ISOWeek()
-	_, beginningWeek := beginningOfTheMonth.ISOWeek()
-	return 1 + thisWeek - beginningWeek
-}
 
 func thisWeek() {
-	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), numberOfTheWeekInMonth(time.Now()))
+	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
 
 	week, err := goweek.NewWeek(time.Now().ISOWeek())
 	if err != nil {
@@ -204,7 +171,7 @@ func manageResponse(msg *slack.MessageEvent) {
 				case todayRgx.MatchString(trimmedText):
 
 					for _, lunch := range config.Lunch {
-						if isDateToday(lunch.Date) {
+						if dates.IsDateToday(lunch.Date) {
 							message := "Today we eat: " + lunch.Description
 							sendMessage(message, "")
 						}
