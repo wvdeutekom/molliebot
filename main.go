@@ -31,9 +31,9 @@ var (
 
 	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
-	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b`)
-	thisWeekRgx = regexp.MustCompile(`\bdeze\b\s+\bweek\b|\bthis\b+s\bweek\b`)
-	todayrgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beating\b`)
+	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
+	todayRgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
 )
 
 func (l *Lunch) UnmarshalJSON(data []byte) error {
@@ -151,14 +151,17 @@ func manageResponse(msg *slack.MessageEvent) {
 			//Handle help requests
 			// Sentence contains 'help'
 			if helpRgx.MatchString(trimmedText) == true {
-				sendMessage("Need my help? Ask for lunch by asking:\n> gobot wat eten we vandaag", "")
+				sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
+					"> gobot what's for lunch today\n"+
+					"> what are we having for lunch this week gobot\n"+
+					"Or try asking me that in dutch, I'll probably listen.", "")
 			}
 
 			// Handle lunch requests
 			// Sentence contains 'lunch(ing,es)' or 'eten'
 			if lunchRgx.MatchString(trimmedText) == true {
-
 				switch {
+
 				// Sentence contains 'this'/'deze' 'week'
 				case thisWeekRgx.MatchString(trimmedText):
 
