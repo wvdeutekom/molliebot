@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-type Token struct {
-	Token string `json:"token"`
-}
-
 type Lunch struct {
 	Date        time.Time `json:"date"`
 	Description string    `json:"description"`
@@ -29,7 +25,7 @@ type Config struct {
 
 var (
 	api       *slack.Client
-	botToken  Token
+	apiToken  string
 	config    Config
 	channelId string
 
@@ -56,13 +52,9 @@ func (l *Lunch) UnmarshalJSON(data []byte) error {
 }
 
 func init() {
-	file, err := ioutil.ReadFile("./api_key.json")
-	if err != nil {
-		log.Fatal("Cannot read config.json")
-	}
 
-	if err := json.Unmarshal(file, &botToken); err != nil {
-		log.Fatal("Cannot unmarshal json file")
+	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
+		log.Fatalln("No API_KEY environment variable set")
 	}
 
 	raw, err := ioutil.ReadFile("./config.json")
@@ -105,7 +97,7 @@ func getLunchThisWeek() []Lunch {
 func main() {
 	fmt.Println("starting bot")
 
-	api = slack.New(botToken.Token)
+	api = slack.New(apiToken)
 	channelId = "C594N2UHG"
 
 	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
