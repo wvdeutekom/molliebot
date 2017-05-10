@@ -77,7 +77,7 @@ func init() {
 	fmt.Printf("config: %v\n", config)
 }
 
-func thisWeek() {
+func getLunchThisWeek() []Lunch {
 	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
 
 	week, err := goweek.NewWeek(time.Now().ISOWeek())
@@ -87,15 +87,18 @@ func thisWeek() {
 
 	// Loop over each weekday
 	// This should be refactored so its done only once and stored in a struct
+	var lunchesToday []Lunch
 	for _, day := range week.Days {
 
 		//Loop over each meal
 		for _, lunch := range config.Lunch {
 			if lunch.Date == day {
 				fmt.Printf("this week we eat: %v\n", lunch.Description)
+				lunchesToday = append(lunchesToday, lunch)
 			}
 		}
 	}
+	return lunchesToday
 }
 
 func main() {
@@ -103,7 +106,6 @@ func main() {
 
 	api = slack.New(botToken.Token)
 	channelId = "C594N2UHG"
-	thisWeek()
 
 	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
@@ -166,8 +168,13 @@ func manageResponse(msg *slack.MessageEvent) {
 				switch {
 				// Sentence contains 'this'/'deze' 'week'
 				case thisWeekRgx.MatchString(trimmedText):
-					thisWeek()
-					sendMessage("Deze week", "")
+
+					lunchMessage := "This week the following is on the menu:\n"
+					for _, lunch := range getLunchThisWeek() {
+						lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
+					}
+					fmt.Printf("LUNCH MESSAGE %v\n", lunchMessage)
+					sendMessage(lunchMessage, "")
 
 				// Sentence contains 'today'/'vandaag'
 				case todayRgx.MatchString(trimmedText):
@@ -188,6 +195,8 @@ func manageResponse(msg *slack.MessageEvent) {
 
 func sendMessage(messageText string, subMessage string) {
 	params := slack.PostMessageParameters{}
+	footer := "\n\nヽ(°◇° )ノ\n"
+	messageText += footer
 
 	if subMessage != "" {
 		attachment := slack.Attachment{
