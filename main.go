@@ -8,6 +8,7 @@ import (
 	"github.com/nlopes/slack"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"regexp"
 	"time"
@@ -39,18 +40,18 @@ var (
 	todayrgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
 )
 
-func (u *Lunch) UnmarshalJSON(data []byte) error {
+func (l *Lunch) UnmarshalJSON(data []byte) error {
 	type Alias Lunch
 	aux := &struct {
 		Date string `json:"date"`
 		*Alias
 	}{
-		Alias: (*Alias)(u),
+		Alias: (*Alias)(l),
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-	u.Date = dates.StringToDate(aux.Date)
+	l.Date = dates.StringToDate(aux.Date)
 	return nil
 }
 
@@ -195,7 +196,7 @@ func manageResponse(msg *slack.MessageEvent) {
 
 func sendMessage(messageText string, subMessage string) {
 	params := slack.PostMessageParameters{}
-	footer := "\n\nヽ(°◇° )ノ\n"
+	footer := randomFooter()
 	messageText += footer
 
 	if subMessage != "" {
@@ -212,4 +213,25 @@ func sendMessage(messageText string, subMessage string) {
 		return
 	}
 	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+}
+
+func randomFooter() string {
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	emoji := []string{
+		"ヾ(⌐■_■)ノ♪",
+		"ヽ(°◇° )ノ",
+		"\\(^~^)/",
+		"•ᴗ•",
+		"(⌐■_■)",
+		"(☞ﾟヮﾟ)☞",
+		"(•‿•) ",
+		"(」ﾟﾛﾟ)｣ ",
+	}
+
+	// Append some padding
+	footerString := fmt.Sprintf("\n\n%v\n", emoji[rand.Intn(len(emoji))])
+
+	return footerString
 }
