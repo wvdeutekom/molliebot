@@ -2,8 +2,8 @@ package main
 
 import (
 	"./dates"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/grsmv/goweek"
 	"github.com/nlopes/slack"
 	"io/ioutil"
@@ -34,9 +34,9 @@ var (
 
 	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
-	lunchRgx    = regexp.MustCompile(`lunch\w*|\beten\b`)
-	thisWeekRgx = regexp.MustCompile(`\bdeze\b\s+\bweek\b`)
-	todayRgx    = regexp.MustCompile(`\bvandaag\b`)
+	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b`)
+	thisWeekRgx = regexp.MustCompile(`\bdeze\b\s+\bweek\b|\bthis\b+s\bweek\b`)
+	todayrgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
 )
 
 func (u *Lunch) UnmarshalJSON(data []byte) error {
@@ -76,7 +76,6 @@ func init() {
 	}
 	fmt.Printf("config: %v\n", config)
 }
-
 
 func thisWeek() {
 	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
@@ -146,28 +145,31 @@ Loop:
 
 func manageResponse(msg *slack.MessageEvent) {
 
-	// wat eten we vandaag
-	// wat eten we deze week
-
 	if msg.Channel == channelId {
 
 		if botRgx.MatchString(msg.Text) {
+			// Sentence starts or ends with 'gobot'
 			trimmedText := botRgx.ReplaceAllString(msg.Text, "")
 
 			fmt.Printf("TRIMMED TEXT: %s\n", trimmedText)
-			//sendMessage("match", trimmedText)
 
 			//Handle help requests
+			// Sentence contains 'help'
 			if helpRgx.MatchString(trimmedText) == true {
 				sendMessage("Need my help? Ask for lunch by asking:\n> gobot wat eten we vandaag", "")
 			}
 
 			// Handle lunch requests
+			// Sentence contains 'lunch(ing,es)' or 'eten'
 			if lunchRgx.MatchString(trimmedText) == true {
 
 				switch {
+				// Sentence contains 'this'/'deze' 'week'
 				case thisWeekRgx.MatchString(trimmedText):
+					thisWeek()
 					sendMessage("Deze week", "")
+
+				// Sentence contains 'today'/'vandaag'
 				case todayRgx.MatchString(trimmedText):
 
 					for _, lunch := range config.Lunch {
