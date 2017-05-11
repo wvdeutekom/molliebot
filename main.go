@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"time"
 	"github.com/wvdeutekom/molliebot/dates"
+	"sort"
 )
 
 type Lunch struct {
@@ -21,13 +22,13 @@ type Lunch struct {
 
 type Config struct {
 	Lunch []Lunch `json:"lunch"`
+	Channels []string `json:"channels"`
 }
 
 var (
 	api       *slack.Client
 	apiToken  string
 	config    Config
-	channelId string
 
 	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
@@ -78,7 +79,6 @@ func main() {
 	fmt.Println("starting bot")
 
 	api = slack.New(apiToken)
-	channelId = "C594N2UHG"
 
 	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
@@ -142,10 +142,19 @@ func getLunchThisWeek() []Lunch {
 	return lunchesToday
 }
 
+func arrayContainsString(array []string, searchString string) bool {
+
+	sort.Strings(array)
+	i := sort.SearchStrings(array, searchString)
+	if i < len(array) && array[i] == searchString {
+		return true
+	}
+	return false
+}
 
 func manageResponse(msg *slack.MessageEvent) {
 
-	if msg.Channel == channelId {
+	if arrayContainsString(config.Channels, msg.Channel) {
 
 		if botRgx.MatchString(msg.Text) {
 			// Sentence starts or ends with 'gobot'
@@ -159,7 +168,7 @@ func manageResponse(msg *slack.MessageEvent) {
 				sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
 					"> gobot what's for lunch today\n"+
 					"> what are we having for lunch this week gobot\n"+
-					"Or try asking me that in dutch, I'll probably listen.", "")
+					"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
 			}
 
 			// Handle lunch requests
@@ -175,7 +184,7 @@ func manageResponse(msg *slack.MessageEvent) {
 						lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
 					}
 					fmt.Printf("LUNCH MESSAGE %v\n", lunchMessage)
-					sendMessage(lunchMessage, "")
+					sendMessage(lunchMessage, msg.Channel)
 
 				// Sentence contains 'today'/'vandaag'
 				case todayRgx.MatchString(trimmedText):
@@ -183,7 +192,7 @@ func manageResponse(msg *slack.MessageEvent) {
 					for _, lunch := range config.Lunch {
 						if dates.IsDateToday(lunch.Date) {
 							message := "Today we eat: " + lunch.Description
-							sendMessage(message, "")
+							sendMessage(message, msg.Channel)
 						}
 					}
 				}
@@ -194,19 +203,11 @@ func manageResponse(msg *slack.MessageEvent) {
 	}
 }
 
-func sendMessage(messageText string, subMessage string) {
+func sendMessage(messageText string, channelId string) {
 	params := slack.PostMessageParameters{}
 	footer := randomFooter()
 	messageText += footer
 
-	if subMessage != "" {
-		attachment := slack.Attachment{
-			Text: subMessage,
-		}
-		params.Attachments = []slack.Attachment{attachment}
-	}
-
-	// C594N2UHG = devtest channel
 	channelID, timestamp, err := api.PostMessage(channelId, messageText, params)
 	if err != nil {
 		fmt.Printf("%s\n", err)

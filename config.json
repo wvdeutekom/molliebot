@@ -1,4 +1,8 @@
 {
+  "channels": [
+    "C594N2UHG",
+    "C07J1HXF0"
+  ],
   "lunch": [
     { "date":"2017-05-08", "description":"eight chairs" },
     { "date":"2017-05-09", "description":"nine water" },
