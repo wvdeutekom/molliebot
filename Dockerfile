@@ -1,14 +1,23 @@
-# Start from a Debian image with the latest version of Go installed
-# and a workspace (GOPATH) configured at /go.
-FROM golang
+FROM alpine:3.5
 
-# Copy the local package files to the container's workspace.
-ADD . /go/src/github.com/wvdeutekom/molliebot
+ENV GOROOT=/usr/lib/go \
+    GOPATH=/gopath \
+    GOBIN=/gopath/bin \
+    PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
-# Build the outyet command inside the container.
-# (You may fetch or manage dependencies here,
-# either manually or with a tool like "godep".)
-RUN go install github.com/wvdeutekom/molliebot
+WORKDIR /gopath/src/app
+ADD . /gopath/src/app
 
-# Run the outyet command by default when the container starts.
-ENTRYPOINT /go/bin/molliebot
+# Install go and dependencies
+# Cleanup afterwards
+RUN apk add -U git go musl-dev && \
+  go get -v app && \
+  apk del git go && \
+  rm -rf /gopath/pkg && \
+  rm -rf /gopath/src && \
+  rm -rf /var/cache/apk/*
+
+# We need this after the cleanup for the bot to make a websocket connection to slack
+RUN apk add -U ca-certificates
+
+CMD ["/gopath/bin/app"]

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"./dates"
 	"encoding/json"
 	"fmt"
 	"github.com/grsmv/goweek"
@@ -12,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"time"
+	"github.com/wvdeutekom/molliebot/dates"
 )
 
 type Lunch struct {
@@ -57,15 +57,19 @@ func init() {
 		log.Fatalln("No API_KEY environment variable set")
 	}
 
-	raw, err := ioutil.ReadFile("./config.json")
+	var configLocation string
+	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
+		log.Println("No CONFIG_LOCATION environment variable set. Using default './config.json'")
+		configLocation = "./config.json"
+	}
+
+	raw, err := ioutil.ReadFile(configLocation)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		log.Fatalln(err.Error())
 	}
 
 	if err := json.Unmarshal(raw, &config); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		log.Fatalln(err.Error())
 	}
 	fmt.Printf("config: %v\n", config)
 }
