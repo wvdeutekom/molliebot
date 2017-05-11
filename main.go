@@ -29,7 +29,7 @@ var (
 	config    Config
 	channelId string
 
-	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot$`)
+	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
 	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beating\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
