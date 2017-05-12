@@ -171,6 +171,15 @@ func manageResponse(msg *slack.MessageEvent) {
 					"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
 			}
 
+			//Handle general requests
+			// Sentence contains 'go' and 'away'
+			goAwayRgx := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
+			if goAwayRgx.MatchString(trimmedText) == true {
+
+				sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
+			}
+
+
 			// Handle lunch requests
 			// Sentence contains 'lunch(ing,es)' or 'eten'
 			if lunchRgx.MatchString(trimmedText) == true {
@@ -200,7 +209,16 @@ func manageResponse(msg *slack.MessageEvent) {
 		} else {
 			fmt.Println("NO MATCHES AT ALL")
 		}
+	//}
+}
+
+func retrieveSlackUsername(userId string) string {
+	user, error := api.GetUserInfo(userId)
+	if error != nil {
+		log.Fatalln(error)
 	}
+
+	return user.Name
 }
 
 func sendMessage(messageText string, channelId string) {
