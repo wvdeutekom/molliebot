@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"github.com/grsmv/goweek"
 	"github.com/nlopes/slack"
+	"github.com/wvdeutekom/molliebot/dates"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"regexp"
-	"time"
-	"github.com/wvdeutekom/molliebot/dates"
 	"sort"
+	"time"
+	"strconv"
 )
 
 type Lunch struct {
@@ -21,14 +22,15 @@ type Lunch struct {
 }
 
 type Config struct {
-	Lunch []Lunch `json:"lunch"`
+	Lunch    []Lunch  `json:"lunch"`
 	Channels []string `json:"channels"`
+	RestrictToConfigChannels bool
 }
 
 var (
-	api       *slack.Client
-	apiToken  string
-	config    Config
+	api      *slack.Client
+	apiToken string
+	config   Config
 
 	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
@@ -54,13 +56,10 @@ func (l *Lunch) UnmarshalJSON(data []byte) error {
 
 func init() {
 
-	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
-		log.Fatalln("No API_KEY environment variable set")
-	}
-
+	// Read config file
 	var configLocation string
 	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
-		log.Println("No CONFIG_LOCATION environment variable set. Using default './config.json'")
+		log.Println("No CONFIG_LOCATION environment variable set. Using default: './config.json'")
 		configLocation = "./config.json"
 	}
 
@@ -73,6 +72,23 @@ func init() {
 		log.Fatalln(err.Error())
 	}
 	fmt.Printf("config: %v\n", config)
+
+	// Read environment variables
+	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
+		log.Fatalln("No API_KEY environment variable set")
+	}
+
+	restrictToConfigChannelsString := os.Getenv("RESTRICT_TO_CONFIG_CHANNELS")
+	if restrictToConfigChannelsString == "" {
+		log.Println("No RESTRICT_TO_CONFIG_CHANNELS environment variable set. Using default: 'false")
+		config.RestrictToConfigChannels = false
+	} else {
+		config.RestrictToConfigChannels, err = strconv.ParseBool(restrictToConfigChannelsString)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
 }
 
 func main() {
@@ -99,8 +115,16 @@ Loop:
 				// Handle new message to channel
 
 				if ev.Msg.BotID == "" {
-					manageResponse(ev)
+
+					if config.RestrictToConfigChannels == true {
+						if arrayContainsString(config.Channels, ev.Channel) {
+							manageResponse(ev)
+						}
+					} else {
+						manageResponse(ev)
+					}
 				}
+
 
 			case *slack.ReactionAddedEvent:
 				// Handle reaction added
@@ -154,7 +178,6 @@ func arrayContainsString(array []string, searchString string) bool {
 
 func manageResponse(msg *slack.MessageEvent) {
 
-	if arrayContainsString(config.Channels, msg.Channel) {
 
 		if botRgx.MatchString(msg.Text) {
 			// Sentence starts or ends with 'gobot'
