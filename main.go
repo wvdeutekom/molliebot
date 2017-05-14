@@ -32,7 +32,7 @@ var (
 	apiToken string
 	config   Config
 
-	botRgx      = regexp.MustCompile(`^\bgobot|\bgobot\??$`)
+	botNameRgx  = regexp.MustCompile(`^\b(mol|mollie)|\b(mol|mollie)\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
 	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beating\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
@@ -199,6 +199,9 @@ func manageResponse(msg *slack.MessageEvent) {
 			goAwayRgx := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
 			if goAwayRgx.MatchString(trimmedText) == true {
 
+	// Sentence starts or ends with 'mollie' or 'mol'
+	if botNameRgx.MatchString(msg.Text) {
+		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
 				sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
 			}
 
