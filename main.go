@@ -12,8 +12,8 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	"time"
 	"strconv"
+	"time"
 )
 
 type Lunch struct {
@@ -22,8 +22,8 @@ type Lunch struct {
 }
 
 type Config struct {
-	Lunch    []Lunch  `json:"lunch"`
-	Channels []string `json:"channels"`
+	Lunch                    []Lunch  `json:"lunch"`
+	Channels                 []string `json:"channels"`
 	RestrictToConfigChannels bool
 }
 
@@ -37,6 +37,28 @@ var (
 	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beating\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
 	todayRgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+
+	lunchNotFoundMessages = []string{
+		"404 Lunch not found",
+		"There will be bread.",
+		"Elementary, my dear Watson. It looks like bread.",
+		"Keep your friends close, but your bread closer.",
+		"Bread. Shaken, not stirred.",
+		"We'll always have bread.",
+		"They call it a royale with cheese. That means bread.",
+		"Nothing on the menu, but I will have my lunch, in this life or the next.",
+	}
+
+	emojis = []string{
+		"ヾ(⌐■_■)ノ♪",
+		"ヽ(°◇° )ノ",
+		"\\(^~^)/",
+		"•ᴗ•",
+		"(⌐■_■)",
+		"(☞ﾟヮﾟ)☞",
+		"(•‿•) ",
+		"(」ﾟﾛﾟ)｣ ",
+	}
 )
 
 func (l *Lunch) UnmarshalJSON(data []byte) error {
@@ -125,7 +147,6 @@ Loop:
 					}
 				}
 
-
 			case *slack.ReactionAddedEvent:
 				// Handle reaction added
 			case *slack.ReactionRemovedEvent:
@@ -178,64 +199,67 @@ func arrayContainsString(array []string, searchString string) bool {
 
 func manageResponse(msg *slack.MessageEvent) {
 
-
-		if botRgx.MatchString(msg.Text) {
-			// Sentence starts or ends with 'gobot'
-			trimmedText := botRgx.ReplaceAllString(msg.Text, "")
-
-			fmt.Printf("TRIMMED TEXT: %s\n", trimmedText)
-
-			//Handle help requests
-			// Sentence contains 'help'
-			if helpRgx.MatchString(trimmedText) == true {
-				sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
-					"> gobot what's for lunch today\n"+
-					"> what are we having for lunch this week gobot\n"+
-					"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
-			}
-
-			//Handle general requests
-			// Sentence contains 'go' and 'away'
-			goAwayRgx := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
-			if goAwayRgx.MatchString(trimmedText) == true {
-
 	// Sentence starts or ends with 'mollie' or 'mol'
 	if botNameRgx.MatchString(msg.Text) {
 		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
-				sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
-			}
 
+		fmt.Printf("TRIMMED TEXT: %s\n", trimmedText)
 
-			// Handle lunch requests
-			// Sentence contains 'lunch(ing,es)' or 'eten'
-			if lunchRgx.MatchString(trimmedText) == true {
-				switch {
+		//Handle help requests
+		// Sentence contains 'help'
+		if helpRgx.MatchString(trimmedText) == true {
+			sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
+				"> gobot what's for lunch today\n"+
+				"> what are we having for lunch this week gobot\n"+
+				"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
+		}
 
-				// Sentence contains 'this'/'deze' 'week'
-				case thisWeekRgx.MatchString(trimmedText):
+		//Handle general requests
+		// Sentence contains 'go' and 'away'
+		goAwayRgx := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
+		if goAwayRgx.MatchString(trimmedText) == true {
 
-					lunchMessage := "This week the following is on the menu:\n"
-					for _, lunch := range getLunchThisWeek() {
-						lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
-					}
-					fmt.Printf("LUNCH MESSAGE %v\n", lunchMessage)
-					sendMessage(lunchMessage, msg.Channel)
+			sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
+		}
 
+		// Handle lunch requests
+		// Sentence contains 'lunch(ing,es)' or 'eten'
+		if lunchRgx.MatchString(trimmedText) == true {
+			log.Println("lunch match")
+
+			switch {
+
+			// Sentence contains 'this'/'deze' 'week'
+			case thisWeekRgx.MatchString(trimmedText):
+
+				lunchMessage := "This week the following is on the menu:\n"
+				for _, lunch := range getLunchThisWeek() {
+					lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
+				}
+				fmt.Printf("LUNCH MESSAGE %v\n", lunchMessage)
+				sendMessage(lunchMessage, msg.Channel)
+
+			default:
 				// Sentence contains 'today'/'vandaag'
-				case todayRgx.MatchString(trimmedText):
+				//todayRgx.MatchString(trimmedText):
 
-					for _, lunch := range config.Lunch {
-						if dates.IsDateToday(lunch.Date) {
-							message := "Today we eat: " + lunch.Description
-							sendMessage(message, msg.Channel)
-						}
+				lunchFound := false
+				for _, lunch := range config.Lunch {
+					if dates.IsDateToday(lunch.Date) {
+						message := "Today we eat: " + lunch.Description
+						sendMessage(message, msg.Channel)
+						lunchFound = true
 					}
 				}
+				if !lunchFound {
+
+					sendMessage(randomStringFromArray(lunchNotFoundMessages), msg.Channel)
+				}
 			}
-		} else {
-			fmt.Println("NO MATCHES AT ALL")
 		}
-	//}
+	} else {
+		fmt.Println("NO MATCHES AT ALL")
+	}
 }
 
 func retrieveSlackUsername(userId string) string {
@@ -260,23 +284,18 @@ func sendMessage(messageText string, channelId string) {
 	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
 }
 
+func randomStringFromArray(array []string) string {
+
+	rand.Seed(time.Now().UTC().UnixNano())
+	return array[rand.Intn(len(array))]
+}
+
 func randomFooter() string {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	emoji := []string{
-		"ヾ(⌐■_■)ノ♪",
-		"ヽ(°◇° )ノ",
-		"\\(^~^)/",
-		"•ᴗ•",
-		"(⌐■_■)",
-		"(☞ﾟヮﾟ)☞",
-		"(•‿•) ",
-		"(」ﾟﾛﾟ)｣ ",
-	}
-
 	// Append some padding
-	footerString := fmt.Sprintf("\n\n%v\n", emoji[rand.Intn(len(emoji))])
+	footerString := fmt.Sprintf("\n\n%v\n", randomStringFromArray(emojis))
 
 	return footerString
 }
