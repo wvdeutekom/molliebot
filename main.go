@@ -32,9 +32,9 @@ var (
 	apiToken string
 	config   Config
 
-	botNameRgx  = regexp.MustCompile(`^\b(mol|mollie)|\b(mol|mollie)\??$`)
+	botNameRgx  = regexp.MustCompile(`^\bmollie|\bmollie\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
-	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beating\b`)
+	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
 	todayRgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
 
@@ -93,7 +93,6 @@ func init() {
 	if err := json.Unmarshal(raw, &config); err != nil {
 		log.Fatalln(err.Error())
 	}
-	fmt.Printf("config: %v\n", config)
 
 	// Read environment variables
 	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
@@ -164,7 +163,6 @@ Loop:
 }
 
 func getLunchThisWeek() []Lunch {
-	fmt.Printf("This is day %d, week number: %d in the month\n", time.Now().Day(), dates.NumberOfTheWeekInMonth(time.Now()))
 
 	week, err := goweek.NewWeek(time.Now().ISOWeek())
 	if err != nil {
@@ -203,8 +201,6 @@ func manageResponse(msg *slack.MessageEvent) {
 	if botNameRgx.MatchString(msg.Text) {
 		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
 
-		fmt.Printf("TRIMMED TEXT: %s\n", trimmedText)
-
 		//Handle help requests
 		// Sentence contains 'help'
 		if helpRgx.MatchString(trimmedText) == true {
@@ -225,7 +221,6 @@ func manageResponse(msg *slack.MessageEvent) {
 		// Handle lunch requests
 		// Sentence contains 'lunch(ing,es)' or 'eten'
 		if lunchRgx.MatchString(trimmedText) == true {
-			log.Println("lunch match")
 
 			switch {
 
@@ -233,12 +228,15 @@ func manageResponse(msg *slack.MessageEvent) {
 			case thisWeekRgx.MatchString(trimmedText):
 
 				lunchMessage := "This week the following is on the menu:\n"
-				for _, lunch := range getLunchThisWeek() {
+				lunches := getLunchThisWeek()
+				for _, lunch := range lunches {
 					lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
 				}
-				fmt.Printf("LUNCH MESSAGE %v\n", lunchMessage)
-				sendMessage(lunchMessage, msg.Channel)
-
+				if len(lunches) > 0 {
+					sendMessage(lunchMessage, msg.Channel)
+				} else {
+					sendMessage(randomStringFromArray(lunchNotFoundMessages), msg.Channel)
+				}
 			default:
 				// Sentence contains 'today'/'vandaag'
 				//todayRgx.MatchString(trimmedText):

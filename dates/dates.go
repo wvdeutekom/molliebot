@@ -31,10 +31,3 @@ func IsDateToday(date time.Time) bool {
 
 	return isToday
 }
-
-func NumberOfTheWeekInMonth(now time.Time) int {
-	beginningOfTheMonth := time.Date(now.Year(), now.Month(), 1, 1, 1, 1, 1, time.UTC)
-	_, thisWeek := now.ISOWeek()
-	_, beginningWeek := beginningOfTheMonth.ISOWeek()
-	return 1 + thisWeek - beginningWeek
-}
