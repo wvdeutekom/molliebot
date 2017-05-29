@@ -205,8 +205,8 @@ func manageResponse(msg *slack.MessageEvent) {
 		// Sentence contains 'help'
 		if helpRgx.MatchString(trimmedText) == true {
 			sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
-				"> gobot what's for lunch today\n"+
-				"> what are we having for lunch this week gobot\n"+
+				"> Mollie what's for lunch today\n"+
+				"> What are we having for lunch this week mollie\n"+
 				"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
 		}
 
