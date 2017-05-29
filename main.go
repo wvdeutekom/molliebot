@@ -270,7 +270,9 @@ func retrieveSlackUsername(userId string) string {
 }
 
 func sendMessage(messageText string, channelId string) {
-	params := slack.PostMessageParameters{}
+	params := slack.PostMessageParameters{
+		AsUser: true,
+	}
 	footer := randomFooter()
 	messageText += footer
 
