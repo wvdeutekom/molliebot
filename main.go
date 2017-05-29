@@ -28,9 +28,10 @@ type Config struct {
 }
 
 var (
-	api      *slack.Client
-	apiToken string
-	config   Config
+	api       *slack.Client
+	apiToken  string
+	config    Config
+	debugMode bool
 
 	botNameRgx  = regexp.MustCompile(`^\bmollie|\bmollie\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
@@ -95,16 +96,30 @@ func init() {
 	}
 
 	// Read environment variables
+	// API_KEY
 	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
 		log.Fatalln("No API_KEY environment variable set")
 	}
 
+	// RESTRICT_TO_CONFIG_CHANNELS
 	restrictToConfigChannelsString := os.Getenv("RESTRICT_TO_CONFIG_CHANNELS")
 	if restrictToConfigChannelsString == "" {
 		log.Println("No RESTRICT_TO_CONFIG_CHANNELS environment variable set. Using default: 'false")
 		config.RestrictToConfigChannels = false
 	} else {
 		config.RestrictToConfigChannels, err = strconv.ParseBool(restrictToConfigChannelsString)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+
+	// DEBUG
+	debugModeString := os.Getenv("DEBUG")
+	if debugModeString == "" {
+		log.Println("no DEBUG environment variable set. Using default: 'false'")
+		debugMode = false
+	} else {
+		debugMode, err = strconv.ParseBool(debugModeString)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -119,7 +134,7 @@ func main() {
 
 	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
-	api.SetDebug(true)
+	api.SetDebug(debugMode)
 
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
