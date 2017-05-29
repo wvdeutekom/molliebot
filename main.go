@@ -281,7 +281,7 @@ func sendMessage(messageText string, channelId string) {
 		fmt.Printf("%s\n", err)
 		return
 	}
-	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+	fmt.Printf("Message successfully sent to channel %s at %s\n", channelID, timestamp)
 }
 
 func randomStringFromArray(array []string) string {
