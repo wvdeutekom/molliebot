@@ -33,7 +33,7 @@ var (
 	config    Config
 	debugMode bool
 
-	botNameRgx  = regexp.MustCompile(`^\bmollie|\bmollie\??$`)
+	botNameRgx  = regexp.MustCompile(`^\bmollie(bot)\b|\bmollie(bot)\??$`)
 	helpRgx     = regexp.MustCompile(`\bhelp\b`)
 	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
