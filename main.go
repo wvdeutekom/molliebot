@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -38,6 +39,7 @@ var (
 	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
 	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
 	todayRgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+	userTagRgx  = regexp.MustCompile(`\<\@(.{9})\>`)
 
 	lunchNotFoundMessages = []string{
 		"404 Lunch not found",
@@ -212,7 +214,14 @@ func arrayContainsString(array []string, searchString string) bool {
 
 func manageResponse(msg *slack.MessageEvent) {
 
-	// Sentence starts or ends with 'mollie' or 'mol'
+	// Get <@U12345> tag(s) from text and convert them to readable names
+	userTags := userTagRgx.FindAllString(msg.Text, -1)
+	for _, tag := range userTags {
+		retrievedUsername := retrieveSlackUsername(tag)
+		msg.Text = strings.Replace(msg.Text, tag, retrievedUsername, -1)
+	}
+
+	// Sentence starts or ends with 'mollie' or 'molliebot'
 	if botNameRgx.MatchString(msg.Text) {
 		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
 
@@ -276,9 +285,15 @@ func manageResponse(msg *slack.MessageEvent) {
 }
 
 func retrieveSlackUsername(userId string) string {
+
+	// If userId contains <@ >, strip it from the string.
+	if userTagRgx.MatchString(userId) {
+		userId = regexp.MustCompile(`\<\@|\>`).ReplaceAllString(userId, "")
+	}
+
 	user, error := api.GetUserInfo(userId)
 	if error != nil {
-		log.Fatalln(error)
+		log.Print(error)
 	}
 
 	return user.Name
