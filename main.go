@@ -221,8 +221,8 @@ func manageResponse(msg *slack.MessageEvent) {
 		msg.Text = strings.Replace(msg.Text, tag, retrievedUsername, -1)
 	}
 
-	// Sentence starts or ends with 'mollie' or 'molliebot'
-	if botNameRgx.MatchString(msg.Text) {
+	// Sentence starts or ends with 'mollie' or 'molliebot' or is a direct message
+	if botNameRgx.MatchString(msg.Text) || IsMessageDM(msg) {
 		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
 
 		//Handle help requests
@@ -312,6 +312,10 @@ func sendMessage(messageText string, channelId string) {
 		return
 	}
 	fmt.Printf("Message successfully sent to channel %s at %s\n", channelID, timestamp)
+}
+
+func IsMessageDM(msg *slack.MessageEvent) bool {
+	return regexp.MustCompile(`^D(.{8})$`).MatchString(msg.Channel)
 }
 
 func randomStringFromArray(array []string) string {
