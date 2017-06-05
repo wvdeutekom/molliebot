@@ -34,12 +34,15 @@ var (
 	config    Config
 	debugMode bool
 
-	botNameRegex  = regexp.MustCompile(`^\bmollie(bot)\b|\bmollie(bot)\??$`)
-	helpRegex     = regexp.MustCompile(`\bhelp\b`)
-	lunchRegex    = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
-	thisWeekRegex = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
-	todayRegex    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
-	userTagRegex  = regexp.MustCompile(`\<\@(.{9})\>`)
+	botNameRegex       = regexp.MustCompile(`^\bmollie(bot)\b|\bmollie(bot)\??$`)
+	helpRegex          = regexp.MustCompile(`\bhelp\b`)
+	lunchRegex         = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
+	thisWeekRegex      = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
+	todayRegex         = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+	userTagRegex       = regexp.MustCompile(`\<\@(.{9})\>`)
+	goAwayRegex        = regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
+	userIdRegex        = regexp.MustCompile(`\<\@|\>`)
+	directMessageRegex = regexp.MustCompile(`^D(.{8})$`)
 
 	lunchNotFoundMessages = []string{
 		"404 Lunch not found",
@@ -236,7 +239,6 @@ func manageResponse(msg *slack.MessageEvent) {
 
 		//Handle general requests
 		// Sentence contains 'go' and 'away'
-		goAwayRegex := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
 		if goAwayRegex.MatchString(trimmedText) == true {
 
 			sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
@@ -288,7 +290,7 @@ func retrieveSlackUsername(userId string) string {
 
 	// If userId contains <@ >, strip it from the string.
 	if userTagRegex.MatchString(userId) {
-		userId = regexp.MustCompile(`\<\@|\>`).ReplaceAllString(userId, "")
+		userId = userIdRegex.ReplaceAllString(userId, "")
 	}
 
 	user, error := api.GetUserInfo(userId)
@@ -315,7 +317,7 @@ func sendMessage(messageText string, channelId string) {
 }
 
 func IsDirectMessage(msg *slack.MessageEvent) bool {
-	return regexp.MustCompile(`^D(.{8})$`).MatchString(msg.Channel)
+	return directMessageRegex.MatchString(msg.Channel)
 }
 
 func randomStringFromArray(array []string) string {
