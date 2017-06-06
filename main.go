@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -33,11 +34,15 @@ var (
 	config    Config
 	debugMode bool
 
-	botNameRgx  = regexp.MustCompile(`^\bmollie|\bmollie\??$`)
-	helpRgx     = regexp.MustCompile(`\bhelp\b`)
-	lunchRgx    = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
-	thisWeekRgx = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
-	todayRgx    = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+	botNameRegex       = regexp.MustCompile(`^\bmollie(bot)\b|\bmollie(bot)\??$`)
+	helpRegex          = regexp.MustCompile(`\bhelp\b`)
+	lunchRegex         = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
+	thisWeekRegex      = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
+	todayRegex         = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
+	userTagRegex       = regexp.MustCompile(`\<\@(.{9})\>`)
+	goAwayRegex        = regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
+	userIdRegex        = regexp.MustCompile(`\<\@|\>`)
+	directMessageRegex = regexp.MustCompile(`^D(.{8})$`)
 
 	lunchNotFoundMessages = []string{
 		"404 Lunch not found",
@@ -212,13 +217,20 @@ func arrayContainsString(array []string, searchString string) bool {
 
 func manageResponse(msg *slack.MessageEvent) {
 
-	// Sentence starts or ends with 'mollie' or 'mol'
-	if botNameRgx.MatchString(msg.Text) {
-		trimmedText := botNameRgx.ReplaceAllString(msg.Text, "")
+	// Get <@U12345> tag(s) from text and convert them to readable names
+	userTags := userTagRegex.FindAllString(msg.Text, -1)
+	for _, tag := range userTags {
+		retrievedUsername := retrieveSlackUsername(tag)
+		msg.Text = strings.Replace(msg.Text, tag, retrievedUsername, -1)
+	}
+
+	// Sentence starts or ends with 'mollie' or 'molliebot' or is a direct message
+	if botNameRegex.MatchString(msg.Text) || IsDirectMessage(msg) {
+		trimmedText := botNameRegex.ReplaceAllString(msg.Text, "")
 
 		//Handle help requests
 		// Sentence contains 'help'
-		if helpRgx.MatchString(trimmedText) == true {
+		if helpRegex.MatchString(trimmedText) == true {
 			sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
 				"> Mollie what's for lunch today\n"+
 				"> What are we having for lunch this week mollie\n"+
@@ -227,20 +239,19 @@ func manageResponse(msg *slack.MessageEvent) {
 
 		//Handle general requests
 		// Sentence contains 'go' and 'away'
-		goAwayRgx := regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
-		if goAwayRgx.MatchString(trimmedText) == true {
+		if goAwayRegex.MatchString(trimmedText) == true {
 
 			sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
 		}
 
 		// Handle lunch requests
 		// Sentence contains 'lunch(ing,es)' or 'eten'
-		if lunchRgx.MatchString(trimmedText) == true {
+		if lunchRegex.MatchString(trimmedText) == true {
 
 			switch {
 
 			// Sentence contains 'this'/'deze' 'week'
-			case thisWeekRgx.MatchString(trimmedText):
+			case thisWeekRegex.MatchString(trimmedText):
 
 				lunchMessage := "This week the following is on the menu:\n"
 				lunches := getLunchThisWeek()
@@ -254,7 +265,7 @@ func manageResponse(msg *slack.MessageEvent) {
 				}
 			default:
 				// Sentence contains 'today'/'vandaag'
-				//todayRgx.MatchString(trimmedText):
+				//todayRegex.MatchString(trimmedText):
 
 				lunchFound := false
 				for _, lunch := range config.Lunch {
@@ -276,9 +287,15 @@ func manageResponse(msg *slack.MessageEvent) {
 }
 
 func retrieveSlackUsername(userId string) string {
+
+	// If userId contains <@ >, strip it from the string.
+	if userTagRegex.MatchString(userId) {
+		userId = userIdRegex.ReplaceAllString(userId, "")
+	}
+
 	user, error := api.GetUserInfo(userId)
 	if error != nil {
-		log.Fatalln(error)
+		log.Print(error)
 	}
 
 	return user.Name
@@ -297,6 +314,10 @@ func sendMessage(messageText string, channelId string) {
 		return
 	}
 	fmt.Printf("Message successfully sent to channel %s at %s\n", channelID, timestamp)
+}
+
+func IsDirectMessage(msg *slack.MessageEvent) bool {
+	return directMessageRegex.MatchString(msg.Channel)
 }
 
 func randomStringFromArray(array []string) string {
