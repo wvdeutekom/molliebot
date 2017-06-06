@@ -1,0 +1,86 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "molliebot-${ENVIRONMENT}"
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: molliebot
+  namespace: "molliebot-${ENVIRONMENT}"
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  revisionHistoryLimit: 2 # this keeps 2 old replica sets, and removes older replica sets
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: molliebot
+    spec:
+      containers:
+      - image: registry.hub.docker.com/wvdeutekom/molliebot
+        name: molliebot
+        env:
+          - name: CONFIG_LOCATION
+            value: "/gopath/molliebot/config.json"
+          - name: RESTRICT_TO_CONFIG_CHANNELS
+            value: "false"
+          - name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: molliebot-secret
+                key: slack-api-key
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /gopath/molliebot
+          name: config
+      volumes:
+        - name: config
+          configMap:
+            name: molliebot-config
+            items:
+            - key: config-json
+              path: config.json
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: molliebot-secret
+  namespace: "molliebot-${ENVIRONMENT}"
+type: Opaque
+data:
+  slack-api-key: "${SLACK_API_KEY}"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: molliebot-config
+  namespace: molliebot-${ENVIRONMENT}
+data:
+  config-json: |
+    {
+      "channels": [
+        "C594N2UHG",
+        "C07J1HXF0"
+      ],
+      "lunch": [
+        { "date":"2017-05-24", "description":"Wortelkoolsalade, walnoten, gegrilde biet, peer, feta en groene kruidendressing" },
+        { "date":"2017-05-29", "description":"Rattatouille met heel veel groenten, kleine gehaktballetjes en zilvervlies rijst met yoghurt" },
+        { "date":"2017-05-31", "description":"Rode mulfilet op gestoofde bospeentjes, veel groene kruiden, kreeftenboter en een groenten freekehschotel met labneh" }
+      ]
+    }
