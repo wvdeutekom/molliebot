@@ -109,9 +109,7 @@ func (context *AppContext) startCrons() {
 	for _, cronTime := range context.Message.NotificationTimes {
 		fmt.Println("adding cron ", cronTime)
 		cron.AddFunc(cronTime, func() {
-			fmt.Println("Send CRON lunch message")
-			lunchMessage := context.Lunch.GetLunchMessageOfToday()
-			fmt.Println(lunchMessage)
+			lunchMessage := context.Lunch.GetLunchMessageOfToday(true)
 
 			joinedChannelIDs := context.Message.GetJoinedChannelsIDs()
 			context.Message.SendMessageToChannels(lunchMessage, joinedChannelIDs)

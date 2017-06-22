@@ -11,16 +11,30 @@ import (
 )
 
 var (
-	lunchNotFoundMessages = []string{
-		"404 Lunch not found",
-		"There will be bread.",
-		"Elementary, my dear Watson. It looks like bread.",
-		"Keep your friends close, but your bread closer.",
-		"Bread. Shaken, not stirred.",
+	introMessages = []string{
+		"Hi there! Are you as excited about lunch as I am? Let me see what's on the menu.",
+		"Hola, it's almost time for lunch! Let's see what I can hustle up.",
+	}
+
+	//LNF means Lunch Not Found
+	midLNFMessages = []string{
+		"Hmmm. I'm not sure what's on the menu today, all I can say is:",
+		"Don't see anything on the menu today, but my logs say:",
+		"Hmmm. I Couldn't find any lunchings. Slogan time!",
+		"No special lunch found, can someone insert my batteries? -BEEP-",
+		"Where is that lunch? Maybe you should try turning me off and on again",
+	}
+
+	postLNFMessages = []string{
+		`"404 Lunch not found" - Mollie monolith backend`,
+		`"There will be bread." - a bread fanatic`,
+		`"Elementary, my dear Watson. It looks like bread." - Mollie Holmes, probably.`,
+		`"Keep your friends close, but your bread closer." - Sun Tzu`,
+		`"Bread. Shaken, not stirred." - James Bread`,
 		"We'll always have bread.",
-		"They call it a royale with cheese. That means bread.",
-		"Nothing on the menu, but I will have my lunch, in this life or the next.",
-		"This bread seems somewhat familiar; have I eaten this before?",
+		`"They call it a royale with cheese. That means bread."`,
+		`"Nothing on the menu, but I will have my lunch, in this life or the next." - Me. 100%`,
+		`"This bread seems somewhat familiar; have I eaten this before?" - Captain Jack Sparrow`,
 	}
 )
 
@@ -42,14 +56,22 @@ func (lunches *Lunches) ConvertLunchStringsToDate() {
 	}
 }
 
-func (lunches *Lunches) GetLunchMessageOfToday() string {
+// GetLunchMessageOfToday Get the lunch message today.
+// If introduction is set to true then a short introduction message will be prepended
+func (lunches *Lunches) GetLunchMessageOfToday(introduction bool) string {
 
 	var lunchMessage string
 	lunchOfToday := lunches.getLunchOfToday()
 	if lunchOfToday != nil {
 		lunchMessage = "Today we eat: " + lunchOfToday.Description
 	} else {
-		lunchMessage = helpers.RandomStringFromArray(lunchNotFoundMessages)
+		if introduction {
+			lunchMessage += helpers.RandomStringFromArray(introMessages)
+			lunchMessage += "\n"
+		}
+		lunchMessage += helpers.RandomStringFromArray(midLNFMessages)
+		lunchMessage += "\n\n"
+		lunchMessage += helpers.RandomStringFromArray(postLNFMessages)
 	}
 	return lunchMessage
 }
@@ -64,12 +86,20 @@ func (lunches *Lunches) getLunchOfToday() *Lunch {
 	return nil
 }
 
-func (lunches *Lunches) GetLunchMessageOfThisWeek() string {
+// GetLunchMessageOfThisWeek Get the lunch message for this week.
+// If introduction is set to true then a short introduction message will be prepended
+func (lunches *Lunches) GetLunchMessageOfThisWeek(introduction bool) string {
 
 	lunchMessage := "This week the following is on the menu:\n"
 	availableLunch := lunches.getLunchOfThisWeek()
 	if len(availableLunch) == 0 {
-		lunchMessage = helpers.RandomStringFromArray(lunchNotFoundMessages)
+		if introduction {
+			lunchMessage += helpers.RandomStringFromArray(introMessages)
+			lunchMessage += "\n"
+		}
+		lunchMessage += helpers.RandomStringFromArray(midLNFMessages)
+		lunchMessage += "\n\n"
+		lunchMessage += helpers.RandomStringFromArray(postLNFMessages)
 	} else {
 		for _, lunch := range availableLunch {
 			lunchMessage += fmt.Sprintf("%v: %v\n", lunch.DateTime.Weekday(), lunch.Description)

@@ -131,13 +131,13 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 			// Sentence contains 'this'/'deze' 'week'
 			case thisWeekRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfThisWeek()
+				lunchMessage := m.References.Lunch.GetLunchMessageOfThisWeek(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			default:
 				// Sentence contains 'today'/'vandaag'
 				//todayRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfToday()
+				lunchMessage := m.References.Lunch.GetLunchMessageOfToday(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			}
 		}
