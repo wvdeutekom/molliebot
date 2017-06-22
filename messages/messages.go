@@ -110,7 +110,9 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 			m.SendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
 				"> Mollie what's for lunch today\n"+
 				"> What are we having for lunch this week mollie\n"+
-				"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
+				"Or try asking me that in dutch, I'll probably listen.\n"+
+				"\n"+
+				"Suggestions, bugs? Create an issue on <https://github.com/wvdeutekom/molliebot|github.com>", msg.Channel)
 		}
 
 		//Handle general requests
@@ -185,7 +187,6 @@ func (m *Messages) GetJoinedChannelsIDs() []string {
 func (m *Messages) retrieveAllChannels() []slack.Channel {
 	channels, error := m.api.GetChannels(true)
 	if error != nil {
-		fmt.Printf("retrievechannels error: %n\n", channels)
 		log.Print(error)
 		return nil
 	}
@@ -195,7 +196,6 @@ func (m *Messages) retrieveAllChannels() []slack.Channel {
 func (m *Messages) retrieveAllGroups() []slack.Group {
 	groups, error := m.api.GetGroups(true)
 	if error != nil {
-		fmt.Printf("retrieveallGroups error: %n\n", groups)
 		log.Print(error)
 		return nil
 	}
