@@ -1,19 +1,24 @@
 {
-  "channels": [
-    "C594N2UHG",
-    "C07J1HXF0"
-  ],
-  "lunch": [
-    { "date":"2017-05-08", "description":"eight chairs" },
-    { "date":"2017-05-09", "description":"nine water" },
-    { "date":"2017-05-11", "description":"eleven bricks" },
-    { "date":"2017-05-10", "description":"ten laptop" },
-    { "date":"2017-05-15", "description":"fifteen bla" },
-    { "date":"2017-05-13", "description":"thirteen fish" },
-    { "date":"2017-05-14", "description":"fourteen bread" },
-    { "date":"2017-05-16", "description":"sixteen what" },
-    { "date":"2017-05-12", "description":"twelve candy" }
-  ]
+  "messages": {
+    "restricted_channels": [
+      "C594N2UHG",
+      "C07J1HXF0"
+    ]
+  },
+  "lunch": {
+    "lunches": [
+      { "date":"2017-05-08", "description":"eight chairs" },
+      { "date":"2017-05-09", "description":"nine water" },
+      { "date":"2017-05-11", "description":"eleven bricks" },
+      { "date":"2017-05-10", "description":"ten laptop" },
+      { "date":"2017-05-15", "description":"fifteen bla" },
+      { "date":"2017-05-13", "description":"thirteen fish" },
+      { "date":"2017-05-14", "description":"fourteen bread" },
+      { "date":"2017-05-16", "description":"sixteen what" },
+      { "date":"2017-05-12", "description":"twelve candy" },
+      { "date":"2017-06-21", "description":"twenty one cola" }
+    ]
+  }
 }
 
 

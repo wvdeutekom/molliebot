@@ -1,89 +1,33 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/grsmv/goweek"
-	"github.com/nlopes/slack"
-	"github.com/wvdeutekom/molliebot/dates"
-	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
-	"regexp"
-	"sort"
 	"strconv"
-	"strings"
-	"time"
+
+	"github.com/nlopes/slack"
+	"github.com/spf13/viper"
+	"github.com/wvdeutekom/molliebot/lunch"
+	"github.com/wvdeutekom/molliebot/messages"
 )
 
-type Lunch struct {
-	Date        time.Time `json:"date"`
-	Description string    `json:"description"`
+type AppContext struct {
+	Message *messages.Messages `mapstructure:"messages"`
+	Lunch   *lunch.Lunches     `mapstructure:"lunch"`
+	Options options
 }
 
-type Config struct {
-	Lunch                    []Lunch  `json:"lunch"`
-	Channels                 []string `json:"channels"`
+type options struct {
+	DebugMode                bool
 	RestrictToConfigChannels bool
 }
 
 var (
-	api       *slack.Client
-	apiToken  string
-	config    Config
-	debugMode bool
-
-	botNameRegex       = regexp.MustCompile(`^\bmollie(bot)\b|\bmollie(bot)\??$`)
-	helpRegex          = regexp.MustCompile(`\bhelp\b`)
-	lunchRegex         = regexp.MustCompile(`\blunch\w*|\beten\b|\beat\w*\b`)
-	thisWeekRegex      = regexp.MustCompile(`\b(this|deze)\b\s+\bweek\b`)
-	todayRegex         = regexp.MustCompile(`\bvandaag\b|\btoday\b`)
-	userTagRegex       = regexp.MustCompile(`\<\@(.{9})\>`)
-	goAwayRegex        = regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
-	userIdRegex        = regexp.MustCompile(`\<\@|\>`)
-	directMessageRegex = regexp.MustCompile(`^D(.{8})$`)
-
-	lunchNotFoundMessages = []string{
-		"404 Lunch not found",
-		"There will be bread.",
-		"Elementary, my dear Watson. It looks like bread.",
-		"Keep your friends close, but your bread closer.",
-		"Bread. Shaken, not stirred.",
-		"We'll always have bread.",
-		"They call it a royale with cheese. That means bread.",
-		"Nothing on the menu, but I will have my lunch, in this life or the next.",
-	}
-
-	emojis = []string{
-		"ヾ(⌐■_■)ノ♪",
-		"ヽ(°◇° )ノ",
-		"\\(^~^)/",
-		"•ᴗ•",
-		"(⌐■_■)",
-		"(☞ﾟヮﾟ)☞",
-		"(•‿•) ",
-		"(」ﾟﾛﾟ)｣ ",
-	}
+	appContext AppContext
 )
 
-func (l *Lunch) UnmarshalJSON(data []byte) error {
-	type Alias Lunch
-	aux := &struct {
-		Date string `json:"date"`
-		*Alias
-	}{
-		Alias: (*Alias)(l),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	l.Date = dates.StringToDate(aux.Date)
-	return nil
-}
-
 func init() {
-
 	// Read config file
 	var configLocation string
 	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
@@ -91,34 +35,43 @@ func init() {
 		configLocation = "./config.json"
 	}
 
-	raw, err := ioutil.ReadFile(configLocation)
+	// TODO: should extract path from configLocation string
+	viper.AddConfigPath("./")
+	viper.SetConfigFile(configLocation)
+
+	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalf("No configuration file loaded: %v\n", err)
 	}
 
-	if err := json.Unmarshal(raw, &config); err != nil {
-		log.Fatalln(err.Error())
+	// Read config into appContext struct
+	err = viper.Unmarshal(&appContext)
+	if err != nil {
+		log.Fatalf("unable to decode into struct, %v", err)
 	}
 
 	// Read environment variables
 	// API_KEY
+	var apiToken string
 	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
 		log.Fatalln("No API_KEY environment variable set")
 	}
 
 	// RESTRICT_TO_CONFIG_CHANNELS
+	var restrictToConfigChannels bool
 	restrictToConfigChannelsString := os.Getenv("RESTRICT_TO_CONFIG_CHANNELS")
 	if restrictToConfigChannelsString == "" {
 		log.Println("No RESTRICT_TO_CONFIG_CHANNELS environment variable set. Using default: 'false")
-		config.RestrictToConfigChannels = false
+		restrictToConfigChannels = false
 	} else {
-		config.RestrictToConfigChannels, err = strconv.ParseBool(restrictToConfigChannelsString)
+		restrictToConfigChannels, err = strconv.ParseBool(restrictToConfigChannelsString)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}
 
 	// DEBUG
+	var debugMode bool
 	debugModeString := os.Getenv("DEBUG")
 	if debugModeString == "" {
 		log.Println("no DEBUG environment variable set. Using default: 'false'")
@@ -130,208 +83,20 @@ func init() {
 		}
 	}
 
+	appContext.Message.Configuration.ApiToken = apiToken
+	appContext.Options.DebugMode = debugMode
+	appContext.Message.Configuration.VerboseLogging = debugMode
+	appContext.Options.RestrictToConfigChannels = restrictToConfigChannels
 }
 
 func main() {
 	fmt.Println("starting bot")
 
-	api = slack.New(apiToken)
+	appContext.Lunch.ConvertLunchStringsToDate()
 
-	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
+	logger := log.New(os.Stdout, "messages-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
-	api.SetDebug(debugMode)
 
-	rtm := api.NewRTM()
-	go rtm.ManageConnection()
-
-Loop:
-	for {
-		select {
-		case msg := <-rtm.IncomingEvents:
-			switch ev := msg.Data.(type) {
-			case *slack.ConnectedEvent:
-			case *slack.TeamJoinEvent:
-				// Handle new user to client
-			case *slack.MessageEvent: //
-				// Handle new message to channel
-
-				if ev.Msg.BotID == "" {
-
-					if config.RestrictToConfigChannels == true {
-						if arrayContainsString(config.Channels, ev.Channel) {
-							manageResponse(ev)
-						}
-					} else {
-						manageResponse(ev)
-					}
-				}
-
-			case *slack.ReactionAddedEvent:
-				// Handle reaction added
-			case *slack.ReactionRemovedEvent:
-				// Handle reaction removed
-			case *slack.RTMError:
-				fmt.Printf("Error: %s\n", ev.Error())
-			case *slack.InvalidAuthEvent:
-				fmt.Printf("Invalid credentials")
-				break Loop
-			default:
-				// fmt.Printf("Unknown error")
-			}
-		}
-	}
-}
-
-func getLunchThisWeek() []Lunch {
-
-	week, err := goweek.NewWeek(time.Now().ISOWeek())
-	if err != nil {
-		log.Fatal("could not create NewWeek")
-	}
-
-	// Loop over each weekday
-	// This should be refactored so its done only once and stored in a struct
-	var lunchesToday []Lunch
-	for _, day := range week.Days {
-
-		//Loop over each meal
-		for _, lunch := range config.Lunch {
-			if lunch.Date == day {
-				fmt.Printf("this week we eat: %v\n", lunch.Description)
-				lunchesToday = append(lunchesToday, lunch)
-			}
-		}
-	}
-	return lunchesToday
-}
-
-func arrayContainsString(array []string, searchString string) bool {
-
-	sort.Strings(array)
-	i := sort.SearchStrings(array, searchString)
-	if i < len(array) && array[i] == searchString {
-		return true
-	}
-	return false
-}
-
-func manageResponse(msg *slack.MessageEvent) {
-
-	// Get <@U12345> tag(s) from text and convert them to readable names
-	userTags := userTagRegex.FindAllString(msg.Text, -1)
-	for _, tag := range userTags {
-		retrievedUsername := retrieveSlackUsername(tag)
-		msg.Text = strings.Replace(msg.Text, tag, retrievedUsername, -1)
-	}
-
-	// Sentence starts or ends with 'mollie' or 'molliebot' or is a direct message
-	if botNameRegex.MatchString(msg.Text) || IsDirectMessage(msg) {
-		trimmedText := botNameRegex.ReplaceAllString(msg.Text, "")
-
-		//Handle help requests
-		// Sentence contains 'help'
-		if helpRegex.MatchString(trimmedText) == true {
-			sendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
-				"> Mollie what's for lunch today\n"+
-				"> What are we having for lunch this week mollie\n"+
-				"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
-		}
-
-		//Handle general requests
-		// Sentence contains 'go' and 'away'
-		if goAwayRegex.MatchString(trimmedText) == true {
-
-			sendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", retrieveSlackUsername(msg.User)), msg.Channel)
-		}
-
-		// Handle lunch requests
-		// Sentence contains 'lunch(ing,es)' or 'eten'
-		if lunchRegex.MatchString(trimmedText) == true {
-
-			switch {
-
-			// Sentence contains 'this'/'deze' 'week'
-			case thisWeekRegex.MatchString(trimmedText):
-
-				lunchMessage := "This week the following is on the menu:\n"
-				lunches := getLunchThisWeek()
-				for _, lunch := range lunches {
-					lunchMessage += fmt.Sprintf("%v: %v\n", lunch.Date.Weekday(), lunch.Description)
-				}
-				if len(lunches) > 0 {
-					sendMessage(lunchMessage, msg.Channel)
-				} else {
-					sendMessage(randomStringFromArray(lunchNotFoundMessages), msg.Channel)
-				}
-			default:
-				// Sentence contains 'today'/'vandaag'
-				//todayRegex.MatchString(trimmedText):
-
-				lunchFound := false
-				for _, lunch := range config.Lunch {
-					if dates.IsDateToday(lunch.Date) {
-						message := "Today we eat: " + lunch.Description
-						sendMessage(message, msg.Channel)
-						lunchFound = true
-					}
-				}
-				if !lunchFound {
-
-					sendMessage(randomStringFromArray(lunchNotFoundMessages), msg.Channel)
-				}
-			}
-		}
-	} else {
-		fmt.Println("NO MATCHES AT ALL")
-	}
-}
-
-func retrieveSlackUsername(userId string) string {
-
-	// If userId contains <@ >, strip it from the string.
-	if userTagRegex.MatchString(userId) {
-		userId = userIdRegex.ReplaceAllString(userId, "")
-	}
-
-	user, error := api.GetUserInfo(userId)
-	if error != nil {
-		log.Print(error)
-	}
-
-	return user.Name
-}
-
-func sendMessage(messageText string, channelId string) {
-	params := slack.PostMessageParameters{
-		AsUser: true,
-	}
-	footer := randomFooter()
-	messageText += footer
-
-	channelID, timestamp, err := api.PostMessage(channelId, messageText, params)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return
-	}
-	fmt.Printf("Message successfully sent to channel %s at %s\n", channelID, timestamp)
-}
-
-func IsDirectMessage(msg *slack.MessageEvent) bool {
-	return directMessageRegex.MatchString(msg.Channel)
-}
-
-func randomStringFromArray(array []string) string {
-
-	rand.Seed(time.Now().UTC().UnixNano())
-	return array[rand.Intn(len(array))]
-}
-
-func randomFooter() string {
-
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	// Append some padding
-	footerString := fmt.Sprintf("\n\n%v\n", randomStringFromArray(emojis))
-
-	return footerString
+	appContext.Message.Setup(appContext.Lunch)
+	appContext.Message.Monitor()
 }
