@@ -3,10 +3,8 @@ package messages
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/nlopes/slack"
 	"github.com/wvdeutekom/molliebot/helpers"
@@ -241,8 +239,6 @@ func randomFooter() string {
 		"(•‿•) ",
 		"(」ﾟﾛﾟ)｣ ",
 	}
-
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	// Append some padding
 	footerString := fmt.Sprintf("\n\n%v\n", helpers.RandomStringFromArray(emojis))
