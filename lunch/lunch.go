@@ -20,6 +20,7 @@ var (
 		"We'll always have bread.",
 		"They call it a royale with cheese. That means bread.",
 		"Nothing on the menu, but I will have my lunch, in this life or the next.",
+		"This bread seems somewhat familiar; have I eaten this before?",
 	}
 )
 
@@ -93,7 +94,6 @@ func (lunches *Lunches) getLunchOfThisWeek() []Lunch {
 		//Loop over each meal
 		for _, lunch := range lunches.Lunches {
 			if lunch.DateTime == day {
-				fmt.Printf("this week we eat: %v\n", lunch.Description)
 				lunchesThisWeek = append(lunchesThisWeek, lunch)
 			}
 		}

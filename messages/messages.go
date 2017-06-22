@@ -160,6 +160,49 @@ func (m *Messages) RetrieveSlackUsername(userId string) string {
 	return user.Name
 }
 
+func (m *Messages) GetJoinedChannelsIDs() []string {
+
+	// Get Public channels that the user/bot is part of
+	allChannels := m.retrieveAllChannels()
+	// Also get the private channels. Only joined private channels can be fetched
+	allGroups := m.retrieveAllGroups()
+
+	var joinedChannels []string
+
+	// Loop through all the channels and add IDs to joinedChannels if IsMember
+	for _, v := range allChannels {
+		if v.IsMember {
+			joinedChannels = append(joinedChannels, v.ID)
+		}
+	}
+
+	// Add all group IDs to joinedChannels
+	for _, v := range allGroups {
+		joinedChannels = append(joinedChannels, v.ID)
+	}
+	return joinedChannels
+}
+
+func (m *Messages) retrieveAllChannels() []slack.Channel {
+	channels, error := m.api.GetChannels(true)
+	if error != nil {
+		fmt.Printf("retrievechannels error: %n\n", channels)
+		log.Print(error)
+		return nil
+	}
+	return channels
+}
+
+func (m *Messages) retrieveAllGroups() []slack.Group {
+	groups, error := m.api.GetGroups(true)
+	if error != nil {
+		fmt.Printf("retrieveallGroups error: %n\n", groups)
+		log.Print(error)
+		return nil
+	}
+	return groups
+}
+
 func (m *Messages) SendMessageToChannels(messageText string, channelIDs []string) {
 	for _, channelID := range channelIDs {
 		m.SendMessage(messageText, channelID)
