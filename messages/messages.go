@@ -26,10 +26,11 @@ var (
 )
 
 type Messages struct {
-	api           *slack.Client
-	References    references
-	Channels      []string `mapstructure:"restricted_channels"`
-	Configuration configuration
+	api               *slack.Client
+	References        references
+	Channels          []string `mapstructure:"restricted_channels"`
+	NotificationTimes []string `mapstructure:"notification_times"`
+	Configuration     configuration
 }
 
 type configuration struct {

@@ -106,14 +106,17 @@ func main() {
 func (context *AppContext) startCrons() {
 
 	cron := cron.New()
-	fmt.Println("adding cron")
-	cron.AddFunc("0 55 11 * * *", func() {
-		fmt.Println("Send CRON lunch message")
-		lunchMessage := context.Lunch.GetLunchMessageOfToday()
-		fmt.Println(lunchMessage)
+	for _, cronTime := range context.Message.NotificationTimes {
+		fmt.Println("adding cron ", cronTime)
+		cron.AddFunc(cronTime, func() {
+			fmt.Println("Send CRON lunch message")
+			lunchMessage := context.Lunch.GetLunchMessageOfToday()
+			fmt.Println(lunchMessage)
 
-		joinedChannelIDs := context.Message.GetJoinedChannelsIDs()
-		appContext.Message.SendMessageToChannels(lunchMessage, joinedChannelIDs)
-	})
+			joinedChannelIDs := context.Message.GetJoinedChannelsIDs()
+			context.Message.SendMessageToChannels(lunchMessage, joinedChannelIDs)
+		})
+
+	}
 	cron.Start()
 }
