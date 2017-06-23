@@ -27,5 +27,6 @@ else
     exit 1;
 fi
 
+IMAGE_TAG=$(git rev-parse --short HEAD)
 SLACK_API_KEY=$(echo -n $API_KEY | base64)
 expenv < ../kubernetes/resources.yml | kubectl --namespace=molliebot-${ENVIRONMENT} apply -f -

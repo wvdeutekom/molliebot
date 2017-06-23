@@ -25,7 +25,7 @@ spec:
         app: molliebot
     spec:
       containers:
-      - image: registry.hub.docker.com/wvdeutekom/molliebot
+      - image: registry.hub.docker.com/wvdeutekom/molliebot:${IMAGE_TAG}
         name: molliebot
         env:
           - name: CONFIG_LOCATION
@@ -74,13 +74,28 @@ metadata:
 data:
   config-json: |
     {
-      "channels": [
-        "C594N2UHG",
-        "C07J1HXF0"
-      ],
-      "lunch": [
-        { "date":"2017-05-24", "description":"Wortelkoolsalade, walnoten, gegrilde biet, peer, feta en groene kruidendressing" },
-        { "date":"2017-05-29", "description":"Rattatouille met heel veel groenten, kleine gehaktballetjes en zilvervlies rijst met yoghurt" },
-        { "date":"2017-05-31", "description":"Rode mulfilet op gestoofde bospeentjes, veel groene kruiden, kreeftenboter en een groenten freekehschotel met labneh" }
-      ]
+      "messages": {
+        "restricted_channels": [
+          "C594N2UHG",
+          "C07J1HXF0"
+        ],
+        "notification_times": [
+          "0 55 11 * * 1-5"
+        ]
+      },
+      "lunch": {
+        "lunches": [
+          { "date":"2017-05-24", "description":"Wortelkoolsalade, walnoten, gegrilde biet, peer, feta en groene kruidendressing" },
+          { "date":"2017-05-29", "description":"Rattatouille met heel veel groenten, kleine gehaktballetjes en zilvervlies rijst met yoghurt" },
+          { "date":"2017-05-31", "description":"Rode mulfilet op gestoofde bospeentjes, veel groene kruiden, kreeftenboter en een groenten freekehschotel met labneh" },
+          { "date":"2017-06-08", "description":"Noedels met verse groenten, kip/charsiu, ook vega met een frisse salade" },
+          { "date":"2017-06-12", "description":"Groentenburgers linzen schotel met veel verse groenten en komkommer salade" },
+          { "date":"2017-06-14", "description":"Sate van kip met nasi atjar en oosterse salade" },
+          { "date":"2017-06-19", "description":"Cevapcici met tzazikki ,gratin, groene salade en turksbrood" },
+          { "date":"2017-06-21", "description":"Gegrilde citroen tijm kip en marokkaanse pompoen tagine met kikkererwten" },
+          { "date":"2017-06-26", "description":"Thaise curry met kabeljauw, gele rijst doperwten en broccoli" },
+          { "date":"2017-06-23", "description":"Pancakes!" },
+          { "date":"2017-06-28", "description":"Poke bowl glas noedels, rode kool ,retitich,edamame,rode ui ,rode bieten ,wortel ,mais groene appel,, radijs,gemarineerde gember,komkommer, paddestoelen wasabi mayo en sashimi van zalm" }
+        ]
+      }
     }
