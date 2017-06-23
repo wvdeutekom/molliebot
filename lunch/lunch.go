@@ -35,6 +35,7 @@ var (
 		`"They call it a royale with cheese. That means bread."`,
 		`"Nothing on the menu, but I will have my lunch, in this life or the next." - Me. 100%`,
 		`"This bread seems somewhat familiar; have I eaten this before?" - Captain Jack Sparrow`,
+		`"I'll always have bread, bread with peanutbutter." - Tjeerd`,
 	}
 )
 
