@@ -3,10 +3,8 @@ package messages
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/nlopes/slack"
 	"github.com/wvdeutekom/molliebot/helpers"
@@ -26,10 +24,11 @@ var (
 )
 
 type Messages struct {
-	api           *slack.Client
-	References    references
-	Channels      []string `mapstructure:"restricted_channels"`
-	Configuration configuration
+	api               *slack.Client
+	References        references
+	Channels          []string `mapstructure:"restricted_channels"`
+	NotificationTimes []string `mapstructure:"notification_times"`
+	Configuration     configuration
 }
 
 type configuration struct {
@@ -111,7 +110,9 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 			m.SendMessage("Need my help? Ask for lunch by asking along the lines of:\n"+
 				"> Mollie what's for lunch today\n"+
 				"> What are we having for lunch this week mollie\n"+
-				"Or try asking me that in dutch, I'll probably listen.", msg.Channel)
+				"Or try asking me that in dutch, I'll probably listen.\n"+
+				"\n"+
+				"Suggestions, bugs? Create an issue on <https://github.com/wvdeutekom/molliebot|github.com>", msg.Channel)
 		}
 
 		//Handle general requests
@@ -130,13 +131,13 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 			// Sentence contains 'this'/'deze' 'week'
 			case thisWeekRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfThisWeek()
+				lunchMessage := m.References.Lunch.GetLunchMessageOfThisWeek(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			default:
 				// Sentence contains 'today'/'vandaag'
 				//todayRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfToday()
+				lunchMessage := m.References.Lunch.GetLunchMessageOfToday(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			}
 		}
@@ -158,6 +159,47 @@ func (m *Messages) RetrieveSlackUsername(userId string) string {
 	}
 
 	return user.Name
+}
+
+func (m *Messages) GetJoinedChannelsIDs() []string {
+
+	// Get Public channels that the user/bot is part of
+	allChannels := m.retrieveAllChannels()
+	// Also get the private channels. Only joined private channels can be fetched
+	allGroups := m.retrieveAllGroups()
+
+	var joinedChannels []string
+
+	// Loop through all the channels and add IDs to joinedChannels if IsMember
+	for _, v := range allChannels {
+		if v.IsMember {
+			joinedChannels = append(joinedChannels, v.ID)
+		}
+	}
+
+	// Add all group IDs to joinedChannels
+	for _, v := range allGroups {
+		joinedChannels = append(joinedChannels, v.ID)
+	}
+	return joinedChannels
+}
+
+func (m *Messages) retrieveAllChannels() []slack.Channel {
+	channels, error := m.api.GetChannels(true)
+	if error != nil {
+		log.Print(error)
+		return nil
+	}
+	return channels
+}
+
+func (m *Messages) retrieveAllGroups() []slack.Group {
+	groups, error := m.api.GetGroups(true)
+	if error != nil {
+		log.Print(error)
+		return nil
+	}
+	return groups
 }
 
 func (m *Messages) SendMessageToChannels(messageText string, channelIDs []string) {
@@ -197,8 +239,6 @@ func randomFooter() string {
 		"(•‿•) ",
 		"(」ﾟﾛﾟ)｣ ",
 	}
-
-	rand.Seed(time.Now().UTC().UnixNano())
 
 	// Append some padding
 	footerString := fmt.Sprintf("\n\n%v\n", helpers.RandomStringFromArray(emojis))

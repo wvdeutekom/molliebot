@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/nlopes/slack"
+	"github.com/robfig/cron"
 	"github.com/spf13/viper"
 	"github.com/wvdeutekom/molliebot/lunch"
 	"github.com/wvdeutekom/molliebot/messages"
@@ -96,7 +97,24 @@ func main() {
 
 	logger := log.New(os.Stdout, "messages-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
-
 	appContext.Message.Setup(appContext.Lunch)
+
+	appContext.startCrons()
 	appContext.Message.Monitor()
+}
+
+func (context *AppContext) startCrons() {
+
+	cron := cron.New()
+	for _, cronTime := range context.Message.NotificationTimes {
+		fmt.Println("adding cron ", cronTime)
+		cron.AddFunc(cronTime, func() {
+			lunchMessage := context.Lunch.GetLunchMessageOfToday(true)
+
+			joinedChannelIDs := context.Message.GetJoinedChannelsIDs()
+			context.Message.SendMessageToChannels(lunchMessage, joinedChannelIDs)
+		})
+
+	}
+	cron.Start()
 }
