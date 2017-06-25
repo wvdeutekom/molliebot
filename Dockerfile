@@ -20,4 +20,10 @@ RUN apk add -U git go musl-dev && \
 # We need this after the cleanup for the bot to make a websocket connection to slack
 RUN apk add -U ca-certificates
 
+# Set the right timezone
+RUN apk add tzdata && \
+  cp /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime && \
+  echo "Europe/Amsterdam" >  /etc/timezone && \
+  apk del tzdata
+
 CMD ["/gopath/bin/app"]
