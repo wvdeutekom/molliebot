@@ -74,6 +74,11 @@ metadata:
 data:
   config-json: |
     {
+      "pagerduty": {
+        "channels": [
+          ""
+        ]
+      },
       "messages": {
         "restricted_channels": [
           "C594N2UHG",

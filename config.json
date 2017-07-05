@@ -1,4 +1,9 @@
 {
+  "pagerduty": {
+    "channels": [
+      "C594N2UHG"
+    ]
+  },
   "messages": {
     "restricted_channels": [
       "C594N2UHG",

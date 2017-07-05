@@ -9,14 +9,14 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
-	"github.com/wvdeutekom/molliebot/lunch"
-	"github.com/wvdeutekom/molliebot/messages"
+	"github.com/wvdeutekom/molliebot/schedules"
 )
 
 type AppContext struct {
-	Message *messages.Messages `mapstructure:"messages"`
-	Lunch   *lunch.Lunches     `mapstructure:"lunch"`
-	Options options
+	Message   *Messages `mapstructure:"messages"`
+	Lunch     *Lunches  `mapstructure:"lunch"`
+	Schedules *schedules.Context
+	Options   options
 }
 
 type options struct {
@@ -29,6 +29,8 @@ var (
 )
 
 func init() {
+	fmt.Println("init main!")
+
 	// Read config file
 	var configLocation string
 	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
@@ -93,14 +95,18 @@ func init() {
 func main() {
 	fmt.Println("starting bot")
 
-	appContext.Lunch.ConvertLunchStringsToDate()
-
 	logger := log.New(os.Stdout, "messages-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
-	appContext.Message.Setup(appContext.Lunch)
 
-	appContext.startCrons()
+	appContext.Lunch.Setup()
+	appContext.Message.Setup(&appContext)
+
+	// appContext.startCrons()
 	appContext.Message.Monitor()
+
+	var password string
+	print("waiting\n")
+	_, _ = fmt.Scanln(&password)
 }
 
 func (context *AppContext) startCrons() {

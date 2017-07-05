@@ -1,4 +1,4 @@
-package lunch
+package main
 
 import (
 	"fmt"
@@ -51,6 +51,10 @@ type Lunch struct {
 	Description string `mapstructure:"description"`
 }
 
+func (lunch *Lunches) Setup() {
+	appContext.Lunch.ConvertLunchStringsToDate()
+}
+
 func (lunches *Lunches) ConvertLunchStringsToDate() {
 	for i := 0; i < len(lunches.Lunches); i++ {
 		lunches.Lunches[i].DateTime = dates.StringToDate(lunches.Lunches[i].DateString)
@@ -61,6 +65,7 @@ func (lunches *Lunches) ConvertLunchStringsToDate() {
 // If introduction is set to true then a short introduction message will be prepended
 func (lunches *Lunches) GetLunchMessageOfToday(introduction bool) string {
 
+	fmt.Println("after")
 	var lunchMessage string
 	lunchOfToday := lunches.getLunchOfToday()
 	if lunchOfToday != nil {
