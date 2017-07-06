@@ -9,11 +9,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Context struct {
-	apiKey      string
-	client      *pagerduty.Client
-	Schedules   []pagerduty.Schedule
-	onCallUsers []pagerduty.User
+type Client struct {
+	pagerdutyClient *pagerduty.Client
+	Schedules       []pagerduty.Schedule
+	onCallUsers     []pagerduty.User
 }
 
 //TODO:
@@ -25,86 +24,105 @@ type Context struct {
 func init() {
 	fmt.Println("init pagerduty!")
 	viper.BindEnv("PAGERDUTY_API_KEY")
-
-	var context Context
-	context.apiKey = viper.Get("PAGERDUTY_API_KEY").(string)
-	context.client = pagerduty.NewClient(context.apiKey)
 }
 
-func (context *Context) GetCurrentOnCallUsers() []pagerduty.User {
+func New(apiKey string) *Client {
+	client := &Client{}
+	client.pagerdutyClient = pagerduty.NewClient(apiKey)
+	return client
+}
 
-	context.getAllSchedules(false)
+func (client *Client) GetCurrentOnCallUsersMessage() string {
+	onCallMessage := "Currently on call:\n"
+
+	var users []pagerduty.User
+	if len(client.onCallUsers) > 0 {
+		users = client.onCallUsers
+	} else {
+		users = client.GetCurrentOnCallUsers()
+	}
+
+	for _, user := range users {
+		onCallMessage = onCallMessage + user.Name + "\n"
+	}
+
+	return onCallMessage
+}
+
+func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
+
+	client.getAllSchedules(false)
 
 	var onCallUsers []pagerduty.User
 
-	for _, schedule := range context.Schedules {
+	for _, schedule := range client.Schedules {
 		var onCallOpts pagerduty.ListOnCallUsersOptions
 		var currentTime = time.Now()
 		onCallOpts.Since = currentTime.Format("2006-01-02T15:04:05Z07:00")
 		hours, _ := time.ParseDuration("1s")
 		onCallOpts.Until = currentTime.Add(hours).Format("2006-01-02T15:04:05Z07:00")
 
-		if eps, err := context.client.ListOnCallUsers(schedule.ID, onCallOpts); err != nil {
+		if eps, err := client.pagerdutyClient.ListOnCallUsers(schedule.ID, onCallOpts); err != nil {
 			panic(err)
 		} else {
 			for _, user := range eps {
-				user = context.getUserInfo(user.ID)
+				user = client.getUserInfo(user.ID)
 				fmt.Println(user)
 				onCallUsers = append(onCallUsers, user)
 			}
 		}
 	}
-
+	client.onCallUsers = onCallUsers
 	return onCallUsers
 }
 
-func (context *Context) getUserInfo(userID string) pagerduty.User {
-	if user, err := context.client.GetUser(userID, pagerduty.GetUserOptions{}); err != nil {
+func (client *Client) getUserInfo(userID string) pagerduty.User {
+	if user, err := client.pagerdutyClient.GetUser(userID, pagerduty.GetUserOptions{}); err != nil {
 		panic(err)
 	} else {
 		return *user
 	}
 }
-func (context *Context) updatePagerdutyChannels() {
+func (client *Client) updatePagerdutyChannels() {
 
-	for _, schedule := range context.Schedules {
+	for _, schedule := range client.Schedules {
 		fmt.Println(schedule.FinalSchedule)
 	}
 }
 
-func (context *Context) getAllSchedules(withDetail bool) {
+func (client *Client) getAllSchedules(withDetail bool) {
 	var c chan pagerduty.Schedule = make(chan pagerduty.Schedule)
-	context.getScheduleList()
+	client.getScheduleList()
 
 	if withDetail {
-		for _, schedule := range context.Schedules {
-			go context.getSchedule(schedule, c)
+		for _, schedule := range client.Schedules {
+			go client.getSchedule(schedule, c)
 		}
-		context.storeSchedules(c)
+		client.storeSchedules(c)
 	}
 }
 
-func (context *Context) storeSchedules(c <-chan pagerduty.Schedule) {
-	for i, _ := range context.Schedules {
+func (client *Client) storeSchedules(c <-chan pagerduty.Schedule) {
+	for i, _ := range client.Schedules {
 		schedule := <-c
-		context.Schedules[i] = schedule
+		client.Schedules[i] = schedule
 	}
 }
 
-func (context *Context) getScheduleList() {
+func (client *Client) getScheduleList() {
 	fmt.Println("getScheduleLIST: ")
 
-	if eps, err := context.client.ListSchedules(pagerduty.ListSchedulesOptions{}); err != nil {
+	if eps, err := client.pagerdutyClient.ListSchedules(pagerduty.ListSchedulesOptions{}); err != nil {
 		panic(err)
 	} else {
-		context.Schedules = eps.Schedules
+		client.Schedules = eps.Schedules
 	}
 }
 
-func (context *Context) getSchedule(schedule pagerduty.Schedule, c chan<- pagerduty.Schedule) {
+func (client *Client) getSchedule(schedule pagerduty.Schedule, c chan<- pagerduty.Schedule) {
 
 	fmt.Println("START! --------------------", schedule.ID)
-	if schedule, err := context.client.GetSchedule(schedule.ID, pagerduty.GetScheduleOptions{}); err != nil {
+	if schedule, err := client.pagerdutyClient.GetSchedule(schedule.ID, pagerduty.GetScheduleOptions{}); err != nil {
 		log.Fatal(err)
 	} else {
 		c <- *schedule

@@ -121,7 +121,7 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 		// Handle pagerduty requests
 		// Sentence contains on(-)call/pagerduty
 		if onCallRegex.MatchString(trimmedText) == true {
-			m.SendMessage("blaat", msg.Channel)
+			m.SendMessage(appContext.Schedule.GetCurrentOnCallUsersMessage(), msg.Channel)
 		}
 
 		// Handle lunch requests

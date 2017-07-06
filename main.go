@@ -13,10 +13,10 @@ import (
 )
 
 type AppContext struct {
-	Message   *Messages `mapstructure:"messages"`
-	Lunch     *Lunches  `mapstructure:"lunch"`
-	Schedules *schedules.Context
-	Options   options
+	Message  *Messages `mapstructure:"messages"`
+	Lunch    *Lunches  `mapstructure:"lunch"`
+	Schedule *schedules.Client
+	Options  options
 }
 
 type options struct {
@@ -86,10 +86,14 @@ func init() {
 		}
 	}
 
+	// Pagerduty
+	pagerdutyApiKey := viper.Get("PAGERDUTY_API_KEY").(string)
+
 	appContext.Message.Configuration.ApiToken = apiToken
 	appContext.Options.DebugMode = debugMode
 	appContext.Message.Configuration.VerboseLogging = debugMode
 	appContext.Options.RestrictToConfigChannels = restrictToConfigChannels
+	appContext.Schedule = schedules.New(pagerdutyApiKey)
 }
 
 func main() {
