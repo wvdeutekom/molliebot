@@ -104,13 +104,18 @@ func main() {
 	appContext.Lunch.Setup()
 	appContext.Message.Setup(&appContext)
 
-	// appContext.startCrons()
+	appContext.startCrons()
 	appContext.Message.Monitor()
 }
 
 func (context *AppContext) startCrons() {
 
 	cron := cron.New()
+
+	cron.AddFunc("0 */10 * * * *", func() {
+		context.Schedule.GetCurrentOnCallUsers()
+	})
+
 	for _, cronTime := range context.Message.NotificationTimes {
 		fmt.Println("adding cron ", cronTime)
 		cron.AddFunc(cronTime, func() {
