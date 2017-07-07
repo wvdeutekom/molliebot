@@ -108,6 +108,9 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 				"> What are we having for lunch this week mollie\n"+
 				"Or try asking me that in dutch, I'll probably listen.\n"+
 				"\n"+
+				"I can also help you with pagerduty\n"+
+				"> Who is on call Molliebot?\n"+
+				"> Who has pagerduty today Mollie?\n"+
 				"Suggestions, bugs? Create an issue on <https://github.com/wvdeutekom/molliebot|github.com>", msg.Channel)
 		}
 

@@ -28,6 +28,8 @@ func (client *Client) GetCurrentOnCallUsersMessage() string {
 	onCallMessage := "Currently on call:\n"
 
 	var users []pagerduty.User
+
+	// For now, do not fetch new data every time this function is called. New data is fetched every 10 minutes in main.go to update this data.
 	if len(client.onCallUsers) > 0 {
 		users = client.onCallUsers
 	} else {

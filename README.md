@@ -1,12 +1,13 @@
 # Molliebot
 
-Try asking the molliebot what's for lunch today.
+Try asking the molliebot what's for lunch or who is on-call today.
 
 
 ## Setup
 Required environment variables:
 
 * `API_KEY` - `default: empty`
+* `PAGERDUTY_API_KEY` - `default: empty`
 
 Optional environment variables
 
