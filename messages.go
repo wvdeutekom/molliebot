@@ -1,4 +1,4 @@
-package messages
+package main
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/nlopes/slack"
 	"github.com/wvdeutekom/molliebot/helpers"
-	"github.com/wvdeutekom/molliebot/lunch"
 )
 
 var (
@@ -20,31 +19,28 @@ var (
 	userTagRegex       = regexp.MustCompile(`\<\@(.{9})\>`)
 	goAwayRegex        = regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
 	userIdRegex        = regexp.MustCompile(`\<\@|\>`)
+	onCallRegex        = regexp.MustCompile(`\bpagerduty\b|\bon(-| )?call\b`)
 	directMessageRegex = regexp.MustCompile(`^D(.{8})$`)
 )
 
 type Messages struct {
 	api               *slack.Client
-	References        references
 	Channels          []string `mapstructure:"restricted_channels"`
 	NotificationTimes []string `mapstructure:"notification_times"`
-	Configuration     configuration
+	Configuration     messagesConfiguration
+	appContext        *AppContext
 }
 
-type configuration struct {
+type messagesConfiguration struct {
 	VerboseLogging           bool
 	ApiToken                 string
 	RestrictToConfigChannels bool
 }
 
-type references struct {
-	Lunch *lunch.Lunches
-}
-
-func (m *Messages) Setup(lunch *lunch.Lunches) {
+func (m *Messages) Setup(appContext *AppContext) {
 	m.api = slack.New(m.Configuration.ApiToken)
 	m.api.SetDebug(m.Configuration.VerboseLogging)
-	m.References.Lunch = lunch
+	m.appContext = appContext
 }
 
 func (m *Messages) Monitor() {
@@ -112,6 +108,9 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 				"> What are we having for lunch this week mollie\n"+
 				"Or try asking me that in dutch, I'll probably listen.\n"+
 				"\n"+
+				"I can also help you with pagerduty\n"+
+				"> Who is on call Molliebot?\n"+
+				"> Who has pagerduty today Mollie?\n"+
 				"Suggestions, bugs? Create an issue on <https://github.com/wvdeutekom/molliebot|github.com>", msg.Channel)
 		}
 
@@ -120,6 +119,12 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 		if goAwayRegex.MatchString(trimmedText) == true {
 
 			m.SendMessage(fmt.Sprintf("I'm sorry %v, I'm afraid can't do that", m.RetrieveSlackUsername(msg.User)), msg.Channel)
+		}
+
+		// Handle pagerduty requests
+		// Sentence contains on(-)call/pagerduty
+		if onCallRegex.MatchString(trimmedText) == true {
+			m.SendMessage(appContext.Schedule.GetCurrentOnCallUsersMessage(), msg.Channel)
 		}
 
 		// Handle lunch requests
@@ -131,13 +136,13 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 			// Sentence contains 'this'/'deze' 'week'
 			case thisWeekRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfThisWeek(false)
+				lunchMessage := m.appContext.Lunch.GetLunchMessageOfThisWeek(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			default:
 				// Sentence contains 'today'/'vandaag'
 				//todayRegex.MatchString(trimmedText):
 
-				lunchMessage := m.References.Lunch.GetLunchMessageOfToday(false)
+				lunchMessage := m.appContext.Lunch.GetLunchMessageOfToday(false)
 				m.SendMessage(lunchMessage, msg.Channel)
 			}
 		}

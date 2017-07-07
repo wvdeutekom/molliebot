@@ -9,14 +9,14 @@ import (
 	"github.com/nlopes/slack"
 	"github.com/robfig/cron"
 	"github.com/spf13/viper"
-	"github.com/wvdeutekom/molliebot/lunch"
-	"github.com/wvdeutekom/molliebot/messages"
+	"github.com/wvdeutekom/molliebot/schedules"
 )
 
 type AppContext struct {
-	Message *messages.Messages `mapstructure:"messages"`
-	Lunch   *lunch.Lunches     `mapstructure:"lunch"`
-	Options options
+	Message  *Messages `mapstructure:"messages"`
+	Lunch    *Lunches  `mapstructure:"lunch"`
+	Schedule *schedules.Client
+	Options  options
 }
 
 type options struct {
@@ -84,20 +84,25 @@ func init() {
 		}
 	}
 
+	// Pagerduty
+	viper.BindEnv("PAGERDUTY_API_KEY")
+	pagerdutyApiKey := viper.Get("PAGERDUTY_API_KEY").(string)
+
 	appContext.Message.Configuration.ApiToken = apiToken
 	appContext.Options.DebugMode = debugMode
 	appContext.Message.Configuration.VerboseLogging = debugMode
 	appContext.Options.RestrictToConfigChannels = restrictToConfigChannels
+	appContext.Schedule = schedules.New(pagerdutyApiKey)
 }
 
 func main() {
 	fmt.Println("starting bot")
 
-	appContext.Lunch.ConvertLunchStringsToDate()
-
 	logger := log.New(os.Stdout, "messages-bot: ", log.Lshortfile|log.LstdFlags)
 	slack.SetLogger(logger)
-	appContext.Message.Setup(appContext.Lunch)
+
+	appContext.Lunch.Setup()
+	appContext.Message.Setup(&appContext)
 
 	appContext.startCrons()
 	appContext.Message.Monitor()
@@ -106,6 +111,11 @@ func main() {
 func (context *AppContext) startCrons() {
 
 	cron := cron.New()
+
+	cron.AddFunc("0 */10 * * * *", func() {
+		context.Schedule.GetCurrentOnCallUsers()
+	})
+
 	for _, cronTime := range context.Message.NotificationTimes {
 		fmt.Println("adding cron ", cronTime)
 		cron.AddFunc(cronTime, func() {

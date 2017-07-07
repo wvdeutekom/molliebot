@@ -1,4 +1,4 @@
-package lunch
+package main
 
 import (
 	"fmt"
@@ -49,6 +49,10 @@ type Lunch struct {
 	DateTime    time.Time
 	DateString  string `mapstructure:"date"`
 	Description string `mapstructure:"description"`
+}
+
+func (lunch *Lunches) Setup() {
+	appContext.Lunch.ConvertLunchStringsToDate()
 }
 
 func (lunches *Lunches) ConvertLunchStringsToDate() {
