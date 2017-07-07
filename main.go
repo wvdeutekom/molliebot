@@ -29,8 +29,6 @@ var (
 )
 
 func init() {
-	fmt.Println("init main!")
-
 	// Read config file
 	var configLocation string
 	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
@@ -87,6 +85,7 @@ func init() {
 	}
 
 	// Pagerduty
+	viper.BindEnv("PAGERDUTY_API_KEY")
 	pagerdutyApiKey := viper.Get("PAGERDUTY_API_KEY").(string)
 
 	appContext.Message.Configuration.ApiToken = apiToken
@@ -107,10 +106,6 @@ func main() {
 
 	// appContext.startCrons()
 	appContext.Message.Monitor()
-
-	var password string
-	print("waiting\n")
-	_, _ = fmt.Scanln(&password)
 }
 
 func (context *AppContext) startCrons() {

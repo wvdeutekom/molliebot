@@ -65,7 +65,6 @@ func (lunches *Lunches) ConvertLunchStringsToDate() {
 // If introduction is set to true then a short introduction message will be prepended
 func (lunches *Lunches) GetLunchMessageOfToday(introduction bool) string {
 
-	fmt.Println("after")
 	var lunchMessage string
 	lunchOfToday := lunches.getLunchOfToday()
 	if lunchOfToday != nil {

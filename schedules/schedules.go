@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
-	"github.com/spf13/viper"
 )
 
 type Client struct {
@@ -16,15 +15,8 @@ type Client struct {
 }
 
 //TODO:
-// * Chat: Get persons on call for a given date. Return the entire week and all the people on call in every team. USE client.ListOnCalls
+// * Chat: Get persons on call for a given date. E.g. "Who is on call next week", return the entire week and all the people on call in every team. USE client.ListOnCalls
 // * Administration: collect the entire pagerduty schedule from pagerduty. Make a list and send it to @wijnand every month
-
-// var authtoken = "P_-iGverwWGC7S7UgrsQ" // Set your auth token here
-
-func init() {
-	fmt.Println("init pagerduty!")
-	viper.BindEnv("PAGERDUTY_API_KEY")
-}
 
 func New(apiKey string) *Client {
 	client := &Client{}
@@ -67,7 +59,6 @@ func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
 		} else {
 			for _, user := range eps {
 				user = client.getUserInfo(user.ID)
-				fmt.Println(user)
 				onCallUsers = append(onCallUsers, user)
 			}
 		}
@@ -110,8 +101,6 @@ func (client *Client) storeSchedules(c <-chan pagerduty.Schedule) {
 }
 
 func (client *Client) getScheduleList() {
-	fmt.Println("getScheduleLIST: ")
-
 	if eps, err := client.pagerdutyClient.ListSchedules(pagerduty.ListSchedulesOptions{}); err != nil {
 		panic(err)
 	} else {
@@ -121,7 +110,6 @@ func (client *Client) getScheduleList() {
 
 func (client *Client) getSchedule(schedule pagerduty.Schedule, c chan<- pagerduty.Schedule) {
 
-	fmt.Println("START! --------------------", schedule.ID)
 	if schedule, err := client.pagerdutyClient.GetSchedule(schedule.ID, pagerduty.GetScheduleOptions{}); err != nil {
 		log.Fatal(err)
 	} else {
