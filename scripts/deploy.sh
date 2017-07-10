@@ -8,6 +8,7 @@ if [ $# -ne 1 ]; then
 fi
 
 API_KEY=${API_KEY:?"You must set a API_KEY environment variable"}
+PAGERDUTY_API_KEY=${PAGERDUTY_API_KEY:?"You must set a PAGERDUTY_API_KEY environment variable"}
 
 ENVIRONMENT=$1
 if [ -z "$ENVIRONMENT" ]; then
@@ -29,4 +30,5 @@ fi
 
 IMAGE_TAG=$(git rev-parse --short HEAD)
 SLACK_API_KEY=$(echo -n $API_KEY | base64)
+PAGERDUTY_API_KEY=$(echo -n $PAGERDUTY_API_KEY | base64)
 expenv < ../kubernetes/resources.yml | kubectl --namespace=molliebot-${ENVIRONMENT} apply -f -
