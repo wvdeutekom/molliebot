@@ -37,6 +37,11 @@ spec:
               secretKeyRef:
                 name: molliebot-secret
                 key: slack-api-key
+          - name: PAGERDUTY_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: molliebot-secret
+                key: pagerduty-api-key
         resources:
           limits:
             cpu: 200m
@@ -64,6 +69,7 @@ metadata:
 type: Opaque
 data:
   slack-api-key: "${SLACK_API_KEY}"
+  pagerduty-api-key: "${PAGERDUTY_API_KEY}"
 
 ---
 apiVersion: v1
