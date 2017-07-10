@@ -37,6 +37,9 @@ func (client *Client) GetCurrentOnCallUsersMessage() string {
 	}
 
 	for _, user := range users {
+		if len(user.Teams) > 0 {
+			onCallMessage = onCallMessage + user.Teams[0].APIObject.Summary + ": "
+		}
 		onCallMessage = onCallMessage + user.Name + "\n"
 	}
 
