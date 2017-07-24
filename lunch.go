@@ -57,7 +57,7 @@ func (lunch *Lunches) Setup() {
 
 func (lunches *Lunches) ConvertLunchStringsToDate() {
 	for i := 0; i < len(lunches.Lunches); i++ {
-		lunches.Lunches[i].DateTime = dates.StringToDate(lunches.Lunches[i].DateString)
+		lunches.Lunches[i].DateTime = dates.StringToDate(lunches.Lunches[i].DateString, dates.StringToDateOptions{})
 	}
 }
 
