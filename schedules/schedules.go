@@ -110,7 +110,7 @@ func (client *Client) CompileScheduleReport() string {
 	location, _ := time.LoadLocation("Europe/Amsterdam")
 
 	nowTime := time.Now()
-	untilTime := time.Date(nowTime.Year(), nowTime.Month()-1, 18, 11, 01, 0, 0, location)
+	untilTime := time.Date(nowTime.Year(), nowTime.Month(), 18, 11, 01, 0, 0, location)
 	fromTime := untilTime.AddDate(0, -1, 0).Add(time.Minute)
 	fmt.Println(fromTime, untilTime)
 
@@ -123,7 +123,7 @@ func (client *Client) CompileScheduleReport() string {
 	// Get all on call information from pagerduty API: User, Schedule and Start/End dates
 	onCalls := client.listOncalls(fromTime, untilTime, scheduleIds...)
 
-	formattedReport := fmt.Sprintf("The following people have been on-call: \nTimeline:\n")
+	formattedReport := fmt.Sprintf("The following people have been on-call:\n\nTimeline from %s to %s:\n", fromTime.Format("2006-01-02 15:04"), untilTime.Format("2006-01-02 15:04"))
 
 	// Calculate the compensation for each onCall and add it to the formattedReport
 	for _, onCall := range onCalls {
@@ -146,6 +146,7 @@ func (client *Client) CompileScheduleReport() string {
 
 		}
 	}
+	formattedReport = formattedReport + "\nNote that _only_ the schedules that _end_ within this window are listed. Any on-call schedules exceeding this window will be taken into consideration next month."
 	fmt.Println(formattedReport)
 
 	return formattedReport
