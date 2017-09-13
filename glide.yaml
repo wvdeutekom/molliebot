@@ -1,0 +1,11 @@
+package: github.com/wvdeutekom/molliebot
+import:
+- package: github.com/grsmv/goweek
+- package: github.com/nlopes/slack
+  version: ~0.1.0
+- package: github.com/robfig/cron
+  version: ~1.0.0
+- package: github.com/spf13/viper
+  version: ~1.0.0
+- package: github.com/wvdeutekom/go-pagerduty
+  version: add-user-contact-methods

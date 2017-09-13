@@ -2,3 +2,4 @@
 .vscode/
 .DS_Store
 api_key.json
+vendor/*
