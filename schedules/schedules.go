@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/PagerDuty/go-pagerduty"
+	pagerduty "github.com/wvdeutekom/go-pagerduty"
 )
 
 type Client struct {
@@ -40,7 +40,7 @@ func (client *Client) GetCurrentOnCallUsersMessage() string {
 		if len(user.Teams) > 0 {
 			onCallMessage = onCallMessage + user.Teams[0].APIObject.Summary + ": "
 		}
-		onCallMessage = onCallMessage + user.Name + "\n"
+		onCallMessage = onCallMessage + user.Name + " - " + client.extractContactAddressFromContactMethods(user.ContactMethods, "phone_contact_method") + "\n"
 	}
 
 	return onCallMessage
@@ -64,6 +64,7 @@ func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
 		} else {
 			for _, user := range eps {
 				user = client.getUserInfo(user.ID)
+				user.ContactMethods = client.GetUserContactMethods(user.ID)
 				onCallUsers = append(onCallUsers, user)
 			}
 		}
@@ -79,6 +80,26 @@ func (client *Client) getUserInfo(userID string) pagerduty.User {
 		return *user
 	}
 }
+
+func (client *Client) GetUserContactMethods(userID string) []pagerduty.ContactMethod {
+	if contactMethodResponse, err := client.pagerdutyClient.GetUserContactMethod(userID); err != nil {
+		panic(err)
+	} else {
+		return contactMethodResponse.ContactMethods
+	}
+}
+
+func (client *Client) extractContactAddressFromContactMethods(userContactMethods []pagerduty.ContactMethod, contactType string) string {
+
+	//Phonenumber is a string because it could potentially start with "+31"
+	for _, contactMethod := range userContactMethods {
+		if contactMethod.Type == contactType {
+			return contactMethod.Address
+		}
+	}
+	return ""
+}
+
 func (client *Client) updatePagerdutyChannels() {
 
 	for _, schedule := range client.Schedules {
