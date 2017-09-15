@@ -7,11 +7,12 @@ ENV GOROOT=/usr/lib/go \
 
 WORKDIR /gopath/src/app
 ADD . /gopath/src/app
+ENV GLIDE_HOME /gopath/src/app
 
 # Install go and dependencies
 # Cleanup afterwards
-RUN apk add -U git go musl-dev && \
-  go get -v app && \
+RUN apk add -U git go glide musl-dev unzip && \
+  glide install && \
   apk del git go && \
   rm -rf /gopath/pkg && \
   rm -rf /gopath/src && \
