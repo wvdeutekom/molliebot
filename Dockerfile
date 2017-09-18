@@ -11,8 +11,9 @@ ENV GLIDE_HOME /gopath/src/app
 
 # Install go and dependencies
 # Cleanup afterwards
-RUN apk add -U git go glide musl-dev unzip && \
+RUN apk add -U git go glide musl-dev && \
   glide install && \
+  go install && \
   apk del git go && \
   rm -rf /gopath/pkg && \
   rm -rf /gopath/src && \
