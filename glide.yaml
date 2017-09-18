@@ -1,4 +1,4 @@
-package: github.com/wvdeutekom/molliebot
+package: .
 import:
 - package: github.com/grsmv/goweek
 - package: github.com/nlopes/slack
@@ -8,4 +8,9 @@ import:
 - package: github.com/spf13/viper
   version: ~1.0.0
 - package: github.com/wvdeutekom/go-pagerduty
-  version: add-user-contact-methods
+- package: github.com/wvdeutekom/molliebot
+  version: glide-dockerfile
+  subpackages:
+  - schedules
+  - helpers
+  - dates
