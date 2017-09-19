@@ -90,9 +90,7 @@ data:
           "C594N2UHG",
           "C07J1HXF0"
         ],
-        "notification_times": [
-          "0 55 11 * * 1-5"
-        ]
+        "notification_times": []
       },
       "lunch": {
         "lunches": [
