@@ -116,6 +116,13 @@ func (context *AppContext) startCrons() {
 		context.Schedule.GetCurrentOnCallUsers()
 	})
 
+	cron.AddFunc("0 1 11 18 * *", func() {
+		reportMessage := context.Schedule.CompileScheduleReport()
+
+		// Send message to private pagerduty_reports channel
+		context.Message.SendMessage(reportMessage, "G6ARE3RSL")
+	})
+
 	for _, cronTime := range context.Message.NotificationTimes {
 		fmt.Println("adding cron ", cronTime)
 		cron.AddFunc(cronTime, func() {

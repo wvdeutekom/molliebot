@@ -77,8 +77,8 @@ func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
 func (client *Client) listOncallUsers(scheduleId string, from time.Time, until time.Time) []pagerduty.User {
 
 	var onCallOpts pagerduty.ListOnCallUsersOptions
-	onCallOpts.Since = from.Format("2006-01-02T15:04:05Z07:00")
-	onCallOpts.Until = until.Format("2006-01-02T15:04:05Z07:00")
+	onCallOpts.Since = from.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
+	onCallOpts.Until = until.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
 
 	if users, err := client.pagerdutyClient.ListOnCallUsers(scheduleId, onCallOpts); err != nil {
 		panic(err)
@@ -94,7 +94,6 @@ func (client *Client) listOncalls(from time.Time, until time.Time, scheduleIds .
 	onCallOpts.Since = from.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
 	onCallOpts.Until = until.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
 	onCallOpts.ScheduleIDs = scheduleIds
-	fmt.Println(onCallOpts)
 
 	if listOnCallResponse, err := client.pagerdutyClient.ListOnCalls(onCallOpts); err != nil {
 		panic(err)
@@ -123,7 +122,7 @@ func (client *Client) CompileScheduleReport() string {
 	// Get all on call information from pagerduty API: User, Schedule and Start/End dates
 	onCalls := client.listOncalls(fromTime, untilTime, scheduleIds...)
 
-	formattedReport := fmt.Sprintf("The following people have been on-call:\n\nTimeline from %s to %s:\n", fromTime.Format("2006-01-02 15:04"), untilTime.Format("2006-01-02 15:04"))
+	formattedReport := fmt.Sprintf("The following people have been on call:\n\nTimeline from %s to %s:\n", fromTime.Format("2006-01-02 15:04"), untilTime.Format("2006-01-02 15:04"))
 
 	// Calculate the compensation for each onCall and add it to the formattedReport
 	for _, onCall := range onCalls {
@@ -147,7 +146,6 @@ func (client *Client) CompileScheduleReport() string {
 		}
 	}
 	formattedReport = formattedReport + "\nNote that _only_ the schedules that _end_ within this window are listed. Any on-call schedules exceeding this window will be taken into consideration next month."
-	fmt.Println(formattedReport)
 
 	return formattedReport
 }
