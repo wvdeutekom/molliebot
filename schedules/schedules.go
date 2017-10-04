@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/PagerDuty/go-pagerduty"
 	"github.com/spf13/viper"
+	"github.com/wvdeutekom/go-pagerduty"
 	"github.com/wvdeutekom/molliebot/dates"
 )
 

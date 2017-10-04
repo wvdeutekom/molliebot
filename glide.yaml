@@ -10,7 +10,7 @@ import:
 - package: github.com/wvdeutekom/go-pagerduty
   version: add-user-contact-methods
 - package: github.com/wvdeutekom/molliebot
-  version: glide-dockerfile
+  version: ^0.2.2
   subpackages:
   - schedules
   - helpers
