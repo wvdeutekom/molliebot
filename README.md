@@ -4,19 +4,17 @@ Try asking the molliebot what's for lunch or who is on-call today.
 
 
 ## Setup
-Required environment variables:
+Environment variables:
 
-* `API_KEY` - `default: empty`
-* `PAGERDUTY_API_KEY` - `default: empty`
+| Variable                      | Required | Default         | Description                                                                                                                                                                                   |
+| :---                          | :---:    | :---            | :---                                                                                                                                                                                          |
+| `API_KEY`                     | Yes      |                 | Slack API key                                                                                                                                                                                 |
+| `PAGERDUTY_API_KEY`           | Yes      |                 | Pagerduty API key                                                                                                                                                                             |
+| `DEBUG`                       | No       | 'false'         | Enables or disables full debug log of the slack API in stdout                                                                                                                                 |
+| `CONFIG_LOCATION`             | No       | './config.json' | The complete filepath where the bot should look for a config file.                                                                                                                            |
+| `RESTRICT_TO_CONFIG_CHANNELS` | No       | 'false'         | This sets wheter the bot should respond to any channel it is invited in (`true`) or respond only to channels it has been invited in _and_ are set in the config file in the `channels` array. |
+|                               |          |                 |                                                                                                                                                                                               |
 
-Optional environment variables
-
-* `DEBUG` - `default: false`
-Enables or disables full debug log of the slack API in stdout
-* `CONFIG_LOCATION` - `default: './config.json'`
-The complete filepath where the bot should look for a config file.
-* `RESTRICT_TO_CONFIG_CHANNELS` - `default: false`
-This sets wheter the bot should respond to any channel it is invited in (`true`) or respond only to channels it has been invited in _and_ are set in the config file in the `channels` array.
 
 ## Building and deployment
 Requirements:
