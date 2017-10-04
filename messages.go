@@ -20,6 +20,7 @@ var (
 	goAwayRegex        = regexp.MustCompile(`(\bgo\b\s+\baway\b|\bleave\b|\bfuck\b\s+\boff\b)`)
 	userIdRegex        = regexp.MustCompile(`\<\@|\>`)
 	onCallRegex        = regexp.MustCompile(`\bpagerduty\b|\bon(-| )?call\b`)
+	reportRegex        = regexp.MustCompile(`\breport\b`)
 	directMessageRegex = regexp.MustCompile(`^D(.{8})$`)
 )
 
@@ -124,7 +125,13 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 		// Handle pagerduty requests
 		// Sentence contains on(-)call/pagerduty
 		if onCallRegex.MatchString(trimmedText) == true {
-			m.SendMessage(appContext.Schedule.GetCurrentOnCallUsersMessage(), msg.Channel)
+			// If question comes from report_channels array, return pagerduty report.
+			if (reportRegex.MatchString(trimmedText) && helpers.ArrayContainsString(appContext.Schedule.ReportChannels, msg.Channel)) == true {
+				m.SendMessage(appContext.Schedule.CompileScheduleReport(), msg.Channel)
+			} else {
+				// If the user does not/may not ask for a report, then print who is on call right now.
+				m.SendMessage(appContext.Schedule.GetCurrentOnCallUsersMessage(), msg.Channel)
+			}
 		}
 
 		// Handle lunch requests

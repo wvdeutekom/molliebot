@@ -5,23 +5,46 @@ import (
 	"log"
 	"time"
 
-	pagerduty "github.com/wvdeutekom/go-pagerduty"
+	"github.com/PagerDuty/go-pagerduty"
+	"github.com/spf13/viper"
+	"github.com/wvdeutekom/molliebot/dates"
 )
 
 type Client struct {
 	pagerdutyClient *pagerduty.Client
 	Schedules       []pagerduty.Schedule
 	onCallUsers     []pagerduty.User
+	ReportChannels  []string `mapstructure:"report_channels"`
 }
 
 //TODO:
 // * Chat: Get persons on call for a given date. E.g. "Who is on call next week", return the entire week and all the people on call in every team. USE client.ListOnCalls
 // * Administration: collect the entire pagerduty schedule from pagerduty. Make a list and send it to @wijnand every month
 
-func New(apiKey string) *Client {
+func New(apiKey string, configLocation string) *Client {
 	client := &Client{}
+	client.readConfig(configLocation, client)
 	client.pagerdutyClient = pagerduty.NewClient(apiKey)
 	return client
+}
+
+func (client *Client) readConfig(configLocation string, clientInstance *Client) error {
+	viper.SetConfigFile(configLocation)
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Println("No configuration file loaded: %v\n", err)
+		return err
+	}
+
+	// Read config into Client struct
+	err = viper.UnmarshalKey("pagerduty", &clientInstance)
+	if err != nil {
+		log.Println("Unable to decode into struct, %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func (client *Client) GetCurrentOnCallUsersMessage() string {
@@ -71,6 +94,82 @@ func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
 	}
 	client.onCallUsers = onCallUsers
 	return onCallUsers
+}
+
+func (client *Client) listOncallUsers(scheduleId string, from time.Time, until time.Time) []pagerduty.User {
+
+	var onCallOpts pagerduty.ListOnCallUsersOptions
+	onCallOpts.Since = from.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
+	onCallOpts.Until = until.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
+
+	if users, err := client.pagerdutyClient.ListOnCallUsers(scheduleId, onCallOpts); err != nil {
+		panic(err)
+	} else {
+		fmt.Println(users)
+		return users
+	}
+}
+
+func (client *Client) listOncalls(from time.Time, until time.Time, scheduleIds ...string) []pagerduty.OnCall {
+
+	var onCallOpts pagerduty.ListOnCallOptions
+	onCallOpts.Since = from.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
+	onCallOpts.Until = until.In(time.UTC).Format("2006-01-02T15:04:05Z07:00")
+	onCallOpts.ScheduleIDs = scheduleIds
+
+	if listOnCallResponse, err := client.pagerdutyClient.ListOnCalls(onCallOpts); err != nil {
+		panic(err)
+	} else {
+		return listOnCallResponse.OnCalls
+	}
+}
+
+func (client *Client) CompileScheduleReport() string {
+
+	client.getAllSchedules(false)
+
+	location, _ := time.LoadLocation("Europe/Amsterdam")
+
+	nowTime := time.Now()
+	untilTime := time.Date(nowTime.Year(), nowTime.Month(), 18, 11, 01, 0, 0, location)
+	fromTime := untilTime.AddDate(0, -1, 0).Add(time.Minute)
+	fmt.Println(fromTime, untilTime)
+
+	// Loop through the schedules and pass them along listOnCalls so we get schedule information back from the API
+	var scheduleIds []string
+	for _, schedule := range client.Schedules {
+		scheduleIds = append(scheduleIds, schedule.ID)
+	}
+
+	// Get all on call information from pagerduty API: User, Schedule and Start/End dates
+	onCalls := client.listOncalls(fromTime, untilTime, scheduleIds...)
+
+	formattedReport := fmt.Sprintf("The following people have been on call:\n\nTimeline from %s to %s:\n", fromTime.Format("2006-01-02 15:04"), untilTime.Format("2006-01-02 15:04"))
+
+	// Calculate the compensation for each onCall and add it to the formattedReport
+	for _, onCall := range onCalls {
+
+		scheduleStart := dates.StringToDate(onCall.Start, dates.StringToDateOptions{"2006-01-02T15:04:05Z07:00"}).In(location)
+		scheduleEnd := dates.StringToDate(onCall.End, dates.StringToDateOptions{"2006-01-02T15:04:05Z07:00"}).In(location)
+
+		// Note that the onCall.Start of a schedule can start _before_ the 'fromTime'.
+		// In order for the pagerduty shift to be outpayed the END date needs to be before the 'untilTime'
+		// This way we never outpay onCall shifts double because they overlap the 'fromTime' or 'untilTime'
+		if scheduleEnd.Before(untilTime) {
+			onCallDuration := scheduleEnd.Sub(scheduleStart)
+
+			weekUnits := (onCallDuration.Hours() / 24) / 7
+			compensationPerWeek := 150.00
+			calculatedCompensation := weekUnits * compensationPerWeek
+
+			reportLine := fmt.Sprintf("%s - %s: %s for %0.2f hours, that's %f week(s) = €%0.2f\n", scheduleStart.Format("2006-01-02 15:04"), scheduleEnd.Format("2006-01-02 15:04"), onCall.User.Summary, onCallDuration.Hours(), weekUnits, calculatedCompensation)
+			formattedReport = formattedReport + reportLine
+
+		}
+	}
+	formattedReport = formattedReport + "\nNote that _only_ the schedules that _end_ within this window are listed. Any on-call schedules exceeding this window will be taken into consideration next month."
+
+	return formattedReport
 }
 
 func (client *Client) getUserInfo(userID string) pagerduty.User {

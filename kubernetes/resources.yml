@@ -81,8 +81,8 @@ data:
   config-json: |
     {
       "pagerduty": {
-        "channels": [
-          ""
+        "report_channels": [
+          "G6ARE3RSL"
         ]
       },
       "messages": {
