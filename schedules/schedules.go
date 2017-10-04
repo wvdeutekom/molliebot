@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/PagerDuty/go-pagerduty"
+	"github.com/spf13/viper"
 	"github.com/wvdeutekom/molliebot/dates"
 )
 
@@ -13,16 +14,37 @@ type Client struct {
 	pagerdutyClient *pagerduty.Client
 	Schedules       []pagerduty.Schedule
 	onCallUsers     []pagerduty.User
+	ReportChannels  []string `mapstructure:"report_channels"`
 }
 
 //TODO:
 // * Chat: Get persons on call for a given date. E.g. "Who is on call next week", return the entire week and all the people on call in every team. USE client.ListOnCalls
 // * Administration: collect the entire pagerduty schedule from pagerduty. Make a list and send it to @wijnand every month
 
-func New(apiKey string) *Client {
+func New(apiKey string, configLocation string) *Client {
 	client := &Client{}
+	client.readConfig(configLocation, client)
 	client.pagerdutyClient = pagerduty.NewClient(apiKey)
 	return client
+}
+
+func (client *Client) readConfig(configLocation string, clientInstance *Client) error {
+	viper.SetConfigFile(configLocation)
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Println("No configuration file loaded: %v\n", err)
+		return err
+	}
+
+	// Read config into Client struct
+	err = viper.UnmarshalKey("pagerduty", &clientInstance)
+	if err != nil {
+		log.Println("Unable to decode into struct, %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func (client *Client) GetCurrentOnCallUsersMessage() string {
@@ -54,9 +76,9 @@ func (client *Client) GetCurrentOnCallUsers() []pagerduty.User {
 	var onCallUsers []pagerduty.User
 
 	for _, schedule := range client.Schedules {
-
+		var onCallOpts pagerduty.ListOnCallUsersOptions
 		var currentTime = time.Now()
-		fromTime := currentTime
+		onCallOpts.Since = currentTime.Format("2006-01-02T15:04:05Z07:00")
 		hours, _ := time.ParseDuration("1s")
 		onCallOpts.Until = currentTime.Add(hours).Format("2006-01-02T15:04:05Z07:00")
 

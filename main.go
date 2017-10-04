@@ -13,15 +13,15 @@ import (
 )
 
 type AppContext struct {
-	Message  *Messages `mapstructure:"messages"`
-	Lunch    *Lunches  `mapstructure:"lunch"`
-	Schedule *schedules.Client
-	Options  options
+	Message        *Messages         `mapstructure:"messages"`
+	Lunch          *Lunches          `mapstructure:"lunch"`
+	Schedule       *schedules.Client `mapstructure:"pagerduty"`
+	Options        options
+	ConfigLocation string
 }
 
 type options struct {
-	DebugMode                bool
-	RestrictToConfigChannels bool
+	DebugMode bool
 }
 
 var (
@@ -30,15 +30,13 @@ var (
 
 func init() {
 	// Read config file
-	var configLocation string
-	if configLocation = os.Getenv("CONFIG_LOCATION"); configLocation == "" {
+	if appContext.ConfigLocation = os.Getenv("CONFIG_LOCATION"); appContext.ConfigLocation == "" {
 		log.Println("No CONFIG_LOCATION environment variable set. Using default: './config.json'")
-		configLocation = "./config.json"
+		appContext.ConfigLocation = "./config.json"
 	}
 
 	// TODO: should extract path from configLocation string
-	viper.AddConfigPath("./")
-	viper.SetConfigFile(configLocation)
+	viper.SetConfigFile(appContext.ConfigLocation)
 
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -56,19 +54,6 @@ func init() {
 	var apiToken string
 	if apiToken = os.Getenv("API_KEY"); apiToken == "" {
 		log.Fatalln("No API_KEY environment variable set")
-	}
-
-	// RESTRICT_TO_CONFIG_CHANNELS
-	var restrictToConfigChannels bool
-	restrictToConfigChannelsString := os.Getenv("RESTRICT_TO_CONFIG_CHANNELS")
-	if restrictToConfigChannelsString == "" {
-		log.Println("No RESTRICT_TO_CONFIG_CHANNELS environment variable set. Using default: 'false")
-		restrictToConfigChannels = false
-	} else {
-		restrictToConfigChannels, err = strconv.ParseBool(restrictToConfigChannelsString)
-		if err != nil {
-			log.Fatalln(err)
-		}
 	}
 
 	// DEBUG
@@ -91,8 +76,7 @@ func init() {
 	appContext.Message.Configuration.ApiToken = apiToken
 	appContext.Options.DebugMode = debugMode
 	appContext.Message.Configuration.VerboseLogging = debugMode
-	appContext.Options.RestrictToConfigChannels = restrictToConfigChannels
-	appContext.Schedule = schedules.New(pagerdutyApiKey)
+	appContext.Schedule = schedules.New(pagerdutyApiKey, appContext.ConfigLocation)
 }
 
 func main() {
@@ -119,8 +103,10 @@ func (context *AppContext) startCrons() {
 	cron.AddFunc("0 1 11 18 * *", func() {
 		reportMessage := context.Schedule.CompileScheduleReport()
 
-		// Send message to private pagerduty_reports channel
-		context.Message.SendMessage(reportMessage, "G6ARE3RSL")
+		// Send message to report_channels
+		for _, reportChannel := range appContext.Schedule.ReportChannels {
+			context.Message.SendMessage(reportMessage, reportChannel)
+		}
 	})
 
 	for _, cronTime := range context.Message.NotificationTimes {

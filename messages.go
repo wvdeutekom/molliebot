@@ -125,10 +125,11 @@ func (m *Messages) manageResponse(msg *slack.MessageEvent) {
 		// Handle pagerduty requests
 		// Sentence contains on(-)call/pagerduty
 		if onCallRegex.MatchString(trimmedText) == true {
-			if reportRegex.MatchString(trimmedText) == true {
+			// If question comes from report_channels array, return pagerduty report.
+			if (reportRegex.MatchString(trimmedText) && helpers.ArrayContainsString(appContext.Schedule.ReportChannels, msg.Channel)) == true {
 				m.SendMessage(appContext.Schedule.CompileScheduleReport(), msg.Channel)
 			} else {
-				// If the user does not ask for a report, then print who is on call right now.
+				// If the user does not/may not ask for a report, then print who is on call right now.
 				m.SendMessage(appContext.Schedule.GetCurrentOnCallUsersMessage(), msg.Channel)
 			}
 		}
