@@ -5,9 +5,9 @@ ENV GOROOT=/usr/lib/go \
     GOBIN=/gopath/bin \
     PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
-WORKDIR /gopath/src/app
-ADD . /gopath/src/app
-ENV GLIDE_HOME /gopath/src/app
+WORKDIR /gopath/src/github.com/wvdeutekom/molliebot
+ADD . /gopath/src/github.com/wvdeutekom/molliebot
+ENV GLIDE_HOME /gopath/src/github.com/wvdeutekom/molliebot
 
 # Install go and dependencies
 # Cleanup afterwards
@@ -28,4 +28,4 @@ RUN apk add tzdata && \
   echo "Europe/Amsterdam" >  /etc/timezone && \
   apk del tzdata
 
-CMD ["/gopath/bin/app"]
+CMD ["/gopath/bin/molliebot"]
