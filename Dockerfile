@@ -25,7 +25,6 @@ RUN apk add -U ca-certificates
 # Set the right timezone
 RUN apk add tzdata && \
   cp /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime && \
-  echo "Europe/Amsterdam" >  /etc/timezone && \
-  apk del tzdata
+  echo "Europe/Amsterdam" >  /etc/timezone
 
 CMD ["/gopath/bin/molliebot"]
