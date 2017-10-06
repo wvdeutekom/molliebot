@@ -1,5 +1,5 @@
-hash: a427ace8bdec2320522f50dc38d6488198756f0070a7b27d98e975f6ada1ff38
-updated: 2017-10-04T22:57:52.970779106+02:00
+hash: 0463d22212bc5f221348dfa44509e1900945fead2c0efb0be9103253c202f324
+updated: 2017-10-05T18:19:31.184179402+02:00
 imports:
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
@@ -26,8 +26,6 @@ imports:
   version: d0303fe809921458f417bcf828397a65db30a7e4
 - name: github.com/nlopes/slack
   version: c86337c0ef2486a15edd804355d9c73d2f2caed1
-- name: github.com/PagerDuty/go-pagerduty
-  version: 078a3284fb0ee5256d2164b53b9ed44ff3b3b05e
 - name: github.com/pelletier/go-toml
   version: 2009e44b6f182e34d8ce081ac2767622937ea3d4
 - name: github.com/robfig/cron
@@ -46,12 +44,6 @@ imports:
   version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
 - name: github.com/wvdeutekom/go-pagerduty
   version: 5fc1b0b298beb44c7543c3bad054d06a347d2885
-- name: github.com/wvdeutekom/molliebot
-  version: ccd12b0def4e1ab9fb4a10049bf9b2a987b62ddd
-  subpackages:
-  - dates
-  - helpers
-  - schedules
 - name: golang.org/x/net
   version: a04bdaca5b32abe1c069418fb7088ae607de5bd0
   subpackages:
@@ -61,7 +53,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 1cbadb444a806fd9430d14ad08967ed91da4fa0a
+  version: d82c1812e304abfeeabd31e995a115a2855bf642
   subpackages:
   - transform
   - unicode/norm
