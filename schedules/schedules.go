@@ -159,7 +159,7 @@ func (client *Client) CompileScheduleReport() string {
 			onCallDuration := scheduleEnd.Sub(scheduleStart)
 
 			weekUnits := (onCallDuration.Hours() / 24) / 7
-			compensationPerWeek := 150.00
+			compensationPerWeek := 250.00
 			calculatedCompensation := weekUnits * compensationPerWeek
 
 			reportLine := fmt.Sprintf("%s - %s: %s for %0.2f hours, that's %f week(s) = €%0.2f\n", scheduleStart.Format("2006-01-02 15:04"), scheduleEnd.Format("2006-01-02 15:04"), onCall.User.Summary, onCallDuration.Hours(), weekUnits, calculatedCompensation)
