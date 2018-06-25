@@ -16,6 +16,7 @@ type AppContext struct {
 	Message        *Messages         `mapstructure:"messages"`
 	Lunch          *Lunches          `mapstructure:"lunch"`
 	Schedule       *schedules.Client `mapstructure:"pagerduty"`
+	Jira           *Jira
 	Options        options
 	ConfigLocation string
 }

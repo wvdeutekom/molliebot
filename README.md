@@ -14,7 +14,15 @@ Environment variables:
 | `CONFIG_LOCATION`             | No       | './config.json' | The complete filepath where the bot should look for a config file.                                                                                                                            |
 | `RESTRICT_TO_CONFIG_CHANNELS` | No       | 'false'         | This sets wheter the bot should respond to any channel it is invited in (`true`) or respond only to channels it has been invited in _and_ are set in the config file in the `channels` array. |
 |                               |          |                 |                                                                                                                                                                                               |
+## Development
 
+First, install all the dependencies
+
+    glide update
+
+Then run make dev through the Makefile
+
+    make dev
 
 ## Building and deployment
 Requirements:

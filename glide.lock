@@ -1,8 +1,14 @@
 hash: 0463d22212bc5f221348dfa44509e1900945fead2c0efb0be9103253c202f324
-updated: 2017-10-05T18:19:31.184179402+02:00
+updated: 2018-04-20T16:43:25.80754+02:00
 imports:
+- name: github.com/andygrunwald/go-jira
+  version: f9c91e2a6be53464f27662c88c89938be4fbe1c6
+- name: github.com/fatih/structs
+  version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/fsnotify/fsnotify
   version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+- name: github.com/golang/glog
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/google/go-querystring
   version: 53e6ce116135b80d037921a7fdd5138cf32d7a8a
   subpackages:
@@ -14,6 +20,7 @@ imports:
   subpackages:
   - hcl/ast
   - hcl/parser
+  - hcl/printer
   - hcl/scanner
   - hcl/strconv
   - hcl/token
@@ -28,6 +35,8 @@ imports:
   version: c86337c0ef2486a15edd804355d9c73d2f2caed1
 - name: github.com/pelletier/go-toml
   version: 2009e44b6f182e34d8ce081ac2767622937ea3d4
+- name: github.com/pkg/errors
+  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
 - name: github.com/robfig/cron
   version: b024fc5ea0e34bc3f83d9941c8d60b0622bfaca4
 - name: github.com/spf13/afero
@@ -41,9 +50,20 @@ imports:
 - name: github.com/spf13/pflag
   version: be7121dd7a937a85e1e4b1ddda6a3edce3466110
 - name: github.com/spf13/viper
-  version: 25b30aa063fc18e48662b86996252eabdcf2f0c7
+  version: b5e8006cbee93ec955a89ab31e0e3ce3204f3736
+- name: github.com/trivago/tgo
+  version: e4d1ddd28c17dd89ed26327cf69fded22060671b
+  subpackages:
+  - tcontainer
+  - treflect
 - name: github.com/wvdeutekom/go-pagerduty
   version: 5fc1b0b298beb44c7543c3bad054d06a347d2885
+- name: github.com/wvdeutekom/molliebot
+  version: bf9dd94677e3f3b28d8e268e5e80468a2576e6ca
+  subpackages:
+  - dates
+  - helpers
+  - schedules
 - name: golang.org/x/net
   version: a04bdaca5b32abe1c069418fb7088ae607de5bd0
   subpackages:

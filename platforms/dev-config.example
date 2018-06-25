@@ -1,0 +1,10 @@
+
+#!/bin/sh
+
+set -a
+
+API_KEY=""
+PAGERDUTY_API_KEY=""
+DEBUG="false"
+CONFIG_LOCATION="./config.json"
+RESTRICT_TO_CONFIG_CHANNELS="false"

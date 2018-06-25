@@ -3,3 +3,5 @@
 .DS_Store
 api_key.json
 vendor/*
+molliebot
+platforms/dev-config
